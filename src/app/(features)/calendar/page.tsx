@@ -409,24 +409,6 @@ export default function CalendarPage() {
                       {openMenuId === ev.id && (
                         <div
                           role="menu"
-<<<<<<< HEAD
-                          className="fixed min-w-[180px] rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900 shadow-lg py-1 translate-y-1"
-                          style={{ 
-                            zIndex: 9999,
-                            top: '0',
-                            left: '0',
-                            transform: 'translate(var(--menu-x), var(--menu-y))'
-                          }}
-                          ref={(el) => {
-                            if (el) {
-                              const btn = document.querySelector(`[data-menu-trigger="${ev.id}"]`);
-                              if (btn) {
-                                const rect = btn.getBoundingClientRect();
-                                el.style.setProperty('--menu-x', `${rect.right - 180}px`);
-                                el.style.setProperty('--menu-y', `${rect.bottom + 4}px`);
-                              }
-                            }
-=======
                           className="absolute min-w-[180px] rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900 shadow-lg py-1"
                           style={{ 
                             zIndex: 9999,
@@ -492,7 +474,6 @@ export default function CalendarPage() {
 
                             el.style.left = `${left}px`;
                             el.style.top = `${top}px`;
->>>>>>> 4e6203b (Version 1 : update /notes et /login)
                           }}
                         >
                           <button
