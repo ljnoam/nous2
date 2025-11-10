@@ -179,58 +179,6 @@ export default function NotesPage() {
 
   return (
     <main
-<<<<<<< HEAD
-      style={{ "--gap": "16px" }}
-      className="flex flex-col h-full bg-neutral-50 dark:bg-neutral-950"
-    >
-      {/* HEADER FIXE */}
-      <section className="pt-[calc(env(safe-area-inset-top)+var(--gap))] px-2">
-        <div className="bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-sm pt-4 px-4 pb-4">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center shadow-lg">
-              <Heart className="w-5 h-5 text-white" fill="white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-semibold text-neutral-900 dark:text-white">Mots doux</h1>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">Vos messages tendres</p>
-            </div>
-          </div>
-
-          {/* TABS */}
-          <div className="flex gap-2 bg-neutral-100 dark:bg-neutral-800 rounded-xl p-1">
-            <button
-              onClick={() => setTab("received")}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                tab === "received"
-                  ? "bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-sm"
-                  : "text-neutral-600 dark:text-neutral-400"
-              }`}
-            >
-              <Inbox className="w-4 h-4" />
-              Reçues
-              {received.length > 0 && (
-                <span className="ml-1 px-2 py-0.5 bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 text-xs font-semibold rounded-full">
-                  {received.length}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => setTab("sent")}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                tab === "sent"
-                  ? "bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-sm"
-                  : "text-neutral-600 dark:text-neutral-400"
-              }`}
-            >
-              <Mail className="w-4 h-4" />
-              Envoyées
-              {sent.length > 0 && (
-                <span className="ml-1 px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-semibold rounded-full">
-                  {sent.length}
-                </span>
-              )}
-            </button>
-=======
       style={{ ['--gap' as any]: '16px' } as React.CSSProperties}
       className="flex flex-col h-full bg-neutral-50 dark:bg-neutral-950"
     >
@@ -273,28 +221,11 @@ export default function NotesPage() {
           <div className="flex gap-2 bg-neutral-100 dark:bg-neutral-800 rounded-xl p-1">
             <button onClick={() => setTab('received')} className={`flex-1 text-sm font-medium py-2 rounded-lg ${tab === 'received' ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white' : 'text-neutral-600 dark:text-neutral-400'}`}>Reçues</button>
             <button onClick={() => setTab('sent')} className={`flex-1 text-sm font-medium py-2 rounded-lg ${tab === 'sent' ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white' : 'text-neutral-600 dark:text-neutral-400'}`}>Envoyées</button>
->>>>>>> 4e6203b (Version 1 : update /notes et /login)
           </div>
         </div>
       </section>
 
       {/* CAROUSEL (fixe au centre) */}
-<<<<<<< HEAD
-      <div className="flex-1 flex items-center justify-center px-3 mt-1 mb-2">
-        {activeList.length === 0 ? (
-          <div className="text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
-              {tab === "received" ? (
-                <Inbox className="w-8 h-8 text-neutral-400 dark:text-neutral-600" />
-              ) : (
-                <Mail className="w-8 h-8 text-neutral-400 dark:text-neutral-600" />
-              )}
-            </div>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">
-              {tab === "received"
-                ? "Aucun mot doux reçu pour l'instant."
-                : "Vous n'avez pas encore envoyé de mot doux."}
-=======
       <div className="flex-1 px-3 mt-2 mb-2">
         {activeList.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12">
@@ -306,7 +237,6 @@ export default function NotesPage() {
             <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-1">Aucune note</h3>
             <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center max-w-sm">
               {tab === 'received' ? "Ton partenaire n'a encore rien envoyé." : "Tu n'as encore rien envoyé — dis-lui quelque chose de doux."}
->>>>>>> 4e6203b (Version 1 : update /notes et /login)
             </p>
           </div>
         ) : (
@@ -318,11 +248,7 @@ export default function NotesPage() {
       <div className="h-4" />
 
       {/* COMPOSER COLLÉ EN BAS */}
-<<<<<<< HEAD
-      <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+var(--nav-h))] z-20 px-3">
-=======
   <div id="notes-composer" className="sticky bottom-[calc(env(safe-area-inset-bottom)+var(--nav-h))] z-20 px-3">
->>>>>>> 4e6203b (Version 1 : update /notes et /login)
         <div className="bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-sm p-3">
           <div className="flex items-end gap-2">
             <div className="flex-1">
