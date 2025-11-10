@@ -409,6 +409,7 @@ export default function CalendarPage() {
                       {openMenuId === ev.id && (
                         <div
                           role="menu"
+<<<<<<< HEAD
                           className="fixed min-w-[180px] rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900 shadow-lg py-1 translate-y-1"
                           style={{ 
                             zIndex: 9999,
@@ -425,6 +426,73 @@ export default function CalendarPage() {
                                 el.style.setProperty('--menu-y', `${rect.bottom + 4}px`);
                               }
                             }
+=======
+                          className="absolute min-w-[180px] rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900 shadow-lg py-1"
+                          style={{ 
+                            zIndex: 9999,
+                          }}
+                          ref={(el) => {
+                            if (!el) return;
+                            const btn = document.querySelector(`[data-menu-trigger="${ev.id}"]`);
+                            if (!btn) return;
+                            const parent = btn.closest('[data-calendar-menu]') as HTMLElement | null;
+                            const rect = btn.getBoundingClientRect();
+                            const parentRect = parent ? parent.getBoundingClientRect() : ({
+                              left: 0,
+                              top: 0,
+                              width: window.innerWidth,
+                              height: window.innerHeight,
+                            } as DOMRect);
+
+                            const menuRect = el.getBoundingClientRect();
+                            const naturalMenuW = Math.max(menuRect.width || 180, 180);
+                            const naturalMenuH = Math.max(menuRect.height || 120, 80);
+                            const padding = 8;
+
+                            // available width inside parent (fallback to viewport)
+                            const availW = parentRect.width || window.innerWidth;
+
+                            // If the container is narrow (mobile), make the menu fit the container with side padding
+                            if (availW <= naturalMenuW + padding * 2 || availW < 320) {
+                              const w = Math.max(140, availW - padding * 2);
+                              el.style.width = `${w}px`;
+                              // position full-width-ish under the button, but keep some side padding
+                              const left = Math.max(padding, rect.left - (parentRect.left || 0) - padding);
+                              let top = rect.bottom - (parentRect.top || 0) + 8;
+                              const menuH = naturalMenuH;
+                              if (top + menuH > (parentRect.height || window.innerHeight) - padding) {
+                                top = rect.top - (parentRect.top || 0) - menuH - 8;
+                                top = Math.max(padding, Math.min(top, (parentRect.height || window.innerHeight) - menuH - padding));
+                              }
+                              el.style.left = `${left}px`;
+                              el.style.top = `${top}px`;
+                              return;
+                            }
+
+                            // Prefer to display the menu below and left-aligned to the button
+                            // so it doesn't overflow the right edge on small screens.
+                            let left = rect.left - (parentRect.left || 0);
+
+                            // If the natural menu width is wider than available, shrink it to fit
+                            const availWidth = (parentRect.width || window.innerWidth) - padding * 2;
+                            const menuW = Math.min(naturalMenuW, Math.max(140, availWidth));
+                            el.style.width = `${menuW}px`;
+
+                            // clamp inside parent/viewport horizontally
+                            const minLeft = padding;
+                            const maxLeft = Math.max((parentRect.width || window.innerWidth) - menuW - padding, minLeft);
+                            left = Math.min(Math.max(left, minLeft), maxLeft);
+
+                            // prefer below the button
+                            let top = rect.bottom - (parentRect.top || 0) + 6;
+                            if (top + naturalMenuH > (parentRect.height || window.innerHeight) - padding) {
+                              top = rect.top - (parentRect.top || 0) - naturalMenuH - 6;
+                              top = Math.max(padding, Math.min(top, (parentRect.height || window.innerHeight) - naturalMenuH - padding));
+                            }
+
+                            el.style.left = `${left}px`;
+                            el.style.top = `${top}px`;
+>>>>>>> 4e6203b (Version 1 : update /notes et /login)
                           }}
                         >
                           <button
