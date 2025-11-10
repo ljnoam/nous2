@@ -10,8 +10,6 @@ import { enablePush, disablePush } from '@/lib/push'
 import Preferences from '@/components/profile/Preferences'
 import Security from '@/components/profile/Security'
 
-<<<<<<< HEAD
-=======
 // Debug: print imported symbols to help identify any undefined imports causing a runtime JSX error
 // (will appear in browser console when this client component module loads)
 try {
@@ -34,7 +32,6 @@ try {
   // ignore in non-browser environments
 }
 
->>>>>>> 4e6203b (Version 1 : update /notes et /login)
 type CoupleStatus = {
   couple_id: string
   started_at: string
