@@ -1,0 +1,379 @@
+'use client'
+
+import HeartBackground from '@/components/home/HeartBackground'
+import { Button } from '@/components/ui/button'
+import { getCurrentPosition } from '@/lib/geolocation'
+import { compressImage, createThumbnail } from '@/lib/image-utils'
+import { supabase } from '@/lib/supabase/client'
+import exifr from 'exifr'
+import { ArrowLeft, MapPin, Trash2, Upload, X } from 'lucide-react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { use, useEffect, useState } from 'react'
+
+type Album = {
+  id: string
+  title: string
+  description: string | null
+  is_private: boolean
+  cover_photo_url: string | null
+  created_at: string
+}
+
+type Photo = {
+  id: string
+  url: string
+  thumbnail_url: string | null
+  caption: string | null
+  latitude: number | null
+  longitude: number | null
+  location_name: string | null
+  taken_at: string | null
+  created_at: string
+}
+
+export default function AlbumDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params)
+  const router = useRouter()
+  const [me, setMe] = useState<string | null>(null)
+  const [coupleId, setCoupleId] = useState<string | null>(null)
+  const [album, setAlbum] = useState<Album | null>(null)
+  const [photos, setPhotos] = useState<Photo[]>([])
+  const [uploading, setUploading] = useState(false)
+  const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null)
+
+  useEffect(() => {
+    ;(async () => {
+      const { data: s } = await supabase.auth.getSession()
+      if (!s.session) {
+        router.replace('/register')
+        return
+      }
+      setMe(s.session.user.id)
+
+      const { data: status } = await supabase
+        .from('my_couple_status')
+        .select('*')
+        .eq('user_id', s.session.user.id)
+        .maybeSingle()
+
+      if (!status) {
+        router.replace('/onboarding')
+        return
+      }
+
+      setCoupleId(status.couple_id)
+
+      // Fetch album
+      const { data: albumData } = await supabase
+        .from('albums')
+        .select('*')
+        .eq('id', resolvedParams.id)
+        .eq('couple_id', status.couple_id)
+        .single()
+
+      if (!albumData) {
+        router.replace('/albums')
+        return
+      }
+
+      setAlbum(albumData)
+
+      // Fetch photos
+      await fetchPhotos(resolvedParams.id)
+    })()
+  }, [router, resolvedParams.id])
+
+  async function fetchPhotos(albumId: string) {
+    const { data: photosData } = await supabase
+      .from('photos')
+      .select('*')
+      .eq('album_id', albumId)
+      .order('created_at', { ascending: false })
+
+    if (photosData) {
+      setPhotos(photosData)
+    }
+  }
+
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files
+    if (!files || files.length === 0 || !album || !me || !coupleId) {
+      console.warn('Upload cancelled - missing data:', { files:files?.length, album: !!album, me: !!me, coupleId: !!coupleId })
+      return
+    }
+
+    setUploading(true)
+
+    try {
+      for (const file of Array.from(files)) {
+        console.log('Uploading file:', file.name)
+        await uploadPhoto(file)
+      }
+      await fetchPhotos(album.id)
+      alert(`${files.length} photo(s) uploadée(s) !`)
+    } catch (error: any) {
+      console.error('Upload error:', error)
+      console.error('Error details:', JSON.stringify(error, null, 2))
+      alert(`Erreur lors de l'upload: ${error?.message || 'Erreur inconnue'}`)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  async function uploadPhoto(file: File) {
+    if (!album || !me || !coupleId) {
+      throw new Error('Missing required data for upload')
+    }
+
+    console.log('Step 1: Extracting EXIF data...')
+    // Extract EXIF data
+    let exifData: any = null
+    try {
+      exifData = await exifr.parse(file)
+      console.log('EXIF data found:', exifData)
+    } catch (e) {
+      console.warn('No EXIF data found')
+    }
+
+    console.log('Step 2: Getting location...')
+    // Get location
+    let latitude: number | null = null
+    let longitude: number | null = null
+
+    if (exifData?.latitude && exifData?.longitude) {
+      latitude = exifData.latitude
+      longitude = exifData.longitude
+      console.log('Using EXIF location:', { latitude, longitude })
+    } else {
+      const coords = await getCurrentPosition()
+      if (coords) {
+        latitude = coords.latitude
+        longitude = coords.longitude
+        console.log('Using GPS location:', { latitude, longitude })
+      }
+    }
+
+    console.log('Step 3: Compressing images...')
+    // Compress image
+    const compressed = await compressImage(file)
+    const thumbnail = await createThumbnail(file)
+    console.log('Compressed sizes:', { compressed: compressed.size, thumbnail: thumbnail.size })
+
+    console.log('Step 4: Uploading to storage...')
+    // Upload to storage
+    const bucket = album.is_private ? 'couple-photos-private' : 'couple-photos'
+    // Use timestamp for unique filename (UUID will be generated by database)
+    const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`
+    const path = `${coupleId}/${album.id}/${filename}.jpg`
+    const thumbPath = `${coupleId}/${album.id}/${filename}_thumb.jpg`
+
+    console.log('Uploading to bucket:', bucket, 'path:', path)
+
+    const { error: uploadError } = await supabase.storage
+      .from(bucket)
+      .upload(path, compressed)
+
+    if (uploadError) {
+      console.error('Storage upload error:', uploadError)
+      throw new Error(`Storage upload failed: ${uploadError.message}`)
+    }
+
+    console.log('Main photo uploaded, uploading thumbnail...')
+    const { error: thumbError } = await supabase.storage
+      .from(bucket)
+      .upload(thumbPath, thumbnail)
+
+    if (thumbError) console.warn('Thumbnail upload failed:', thumbError)
+
+    console.log('Step 5: Getting public URLs...')
+    // Get public URLs
+    const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(path)
+    const { data: thumbUrlData } = supabase.storage.from(bucket).getPublicUrl(thumbPath)
+
+    console.log('URLs:', { url: urlData.publicUrl, thumb: thumbUrlData.publicUrl })
+
+    console.log('Step 6: Saving to database...')
+    // Save to database (let PostgreSQL generate the UUID automatically)
+    const { error: dbError } = await supabase.from('photos').insert({
+      album_id: album.id,
+      couple_id: coupleId,
+      url: urlData.publicUrl,
+      thumbnail_url: thumbUrlData.publicUrl,
+      latitude,
+      longitude,
+      taken_at: exifData?.DateTimeOriginal || null,
+      uploaded_by: me
+    })
+
+    if (dbError) {
+      console.error('Database insert error:', dbError)
+      throw new Error(`Database insert failed: ${dbError.message}`)
+    }
+
+    console.log('Photo uploaded successfully!')
+  }
+
+  async function deletePhoto(photo: Photo) {
+    if (!confirm('Supprimer cette photo ?')) return
+
+    const bucket = album?.is_private ? 'couple-photos-private' : 'couple-photos'
+    const pathMatch = photo.url.match(/\/([^\/]+\/[^\/]+\/[^\/]+\.(jpg|jpeg|png))/)
+
+    if (pathMatch) {
+      const path = pathMatch[1]
+      await supabase.storage.from(bucket).remove([path])
+
+      // Remove thumbnail
+      const thumbPath = path.replace('.jpg', '_thumb.jpg')
+      await supabase.storage.from(bucket).remove([thumbPath])
+    }
+
+    await supabase.from('photos').delete().eq('id', photo.id)
+    await fetchPhotos(album!.id)
+  }
+
+  if (!album) {
+    return (
+      <>
+        <HeartBackground />
+        <div className="relative z-10 min-h-screen flex items-center justify-center">
+          <p>Chargement...</p>
+        </div>
+      </>
+    )
+  }
+
+  return (
+    <>
+      <HeartBackground />
+      <main className="relative z-10 min-h-screen pb-20 pt-8 px-4">
+        <div className="max-w-6xl mx-auto space-y-6">
+          {/* Header */}
+          <div className="flex items-center gap-4">
+            <Link href="/albums">
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </Link>
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold">{album.title}</h1>
+              {album.description && (
+                <p className="text-sm opacity-70 mt-1">{album.description}</p>
+              )}
+              <p className="text-xs opacity-60 mt-1">
+                {photos.length} photo{photos.length > 1 ? 's' : ''}
+              </p>
+            </div>
+
+            <label>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleFileSelect}
+                className="hidden"
+                disabled={uploading}
+              />
+              <Button disabled={uploading} className="rounded-2xl" asChild>
+                <span>
+                  <Upload className="h-4 w-4 mr-2" />
+                  {uploading ? 'Upload...' : 'Ajouter'}
+                </span>
+              </Button>
+            </label>
+          </div>
+
+          {/* Photos Grid */}
+          {photos.length === 0 ? (
+            <div className="rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-neutral-900/60 backdrop-blur-md p-12 text-center">
+              <Upload className="h-16 w-16 mx-auto opacity-30 mb-4" />
+              <p className="text-lg font-semibold opacity-70">Aucune photo</p>
+              <p className="text-sm opacity-60 mt-2">Ajoute des photos pour commencer</p>
+            </div>
+          ) : (
+            <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
+              {photos.map(photo => (
+                <div
+                  key={photo.id}
+                  className="group relative break-inside-avoid rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900 shadow-lg hover:scale-[1.02] transition-transform cursor-pointer"
+                  onClick={() => setSelectedPhoto(photo)}
+                >
+                  <img
+                    src={photo.thumbnail_url || photo.url}
+                    alt={photo.caption || ''}
+                    className="w-full h-auto"
+                  />
+
+                  {(photo.latitude || photo.caption) && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {photo.caption && (
+                        <p className="text-white text-sm">{photo.caption}</p>
+                      )}
+                      {photo.latitude && (
+                        <div className="flex items-center gap-1 text-white/80 text-xs mt-1">
+                          <MapPin className="h-3 w-3" />
+                          <span>
+                            {photo.latitude.toFixed(4)}, {photo.longitude?.toFixed(4)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      deletePhoto(photo)
+                    }}
+                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Lightbox */}
+        {selectedPhoto && (
+          <div
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setSelectedPhoto(null)}
+          >
+            <button
+              onClick={() => setSelectedPhoto(null)}
+              className="absolute top-4 right-4 bg-white/10 text-white rounded-full p-2 hover:bg-white/20"
+            >
+              <X className="h-6 w-6" />
+            </button>
+
+            <img
+              src={selectedPhoto.url}
+              alt={selectedPhoto.caption || ''}
+              className="max-w-full max-h-full object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+
+            {(selectedPhoto.caption || selectedPhoto.latitude) && (
+              <div className="absolute bottom-4 left-4 right-4 bg-white/10 backdrop-blur-md rounded-2xl p-4 text-white">
+                {selectedPhoto.caption && (
+                  <p className="font-medium">{selectedPhoto.caption}</p>
+                )}
+                {selectedPhoto.latitude && (
+                  <div className="flex items-center gap-2 text-sm opacity-80 mt-2">
+                    <MapPin className="h-4 w-4" />
+                    <span>
+                      {selectedPhoto.latitude.toFixed(6)}, {selectedPhoto.longitude?.toFixed(6)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </main>
+    </>
+  )
+}
