@@ -90,7 +90,13 @@ export default function AuthForm({ defaultMode = "login" as Mode }: { defaultMod
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
       } else {
-        const { error } = await supabase.auth.signUp({ email, password })
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${location.origin}/login?confirmed=true`,
+          },
+        })
         if (error) throw error
         router.replace("/login?verify=1")
         return
@@ -114,6 +120,21 @@ export default function AuthForm({ defaultMode = "login" as Mode }: { defaultMod
         {search?.get("verify") && (
           <div className="mb-3 rounded-xl border border-amber-300 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-900/30 px-3 py-2 text-sm text-amber-800 dark:text-amber-200">
             Un e-mail de confirmation vient d'être envoyé. Vérifie ta boîte mail puis connecte-toi.
+          </div>
+        )}
+        {search?.get("confirmed") && (
+          <div className="mb-3 rounded-xl border border-green-300 bg-green-50 dark:border-green-900/40 dark:bg-green-900/30 px-3 py-2 text-sm text-green-800 dark:text-green-200">
+            Ton compte a été confirmé avec succès ! Tu peux maintenant te connecter.
+          </div>
+        )}
+        {search?.get("email_updated") && (
+          <div className="mb-3 rounded-xl border border-green-300 bg-green-50 dark:border-green-900/40 dark:bg-green-900/30 px-3 py-2 text-sm text-green-800 dark:text-green-200">
+            Ton email a bien été changé. Connecte-toi avec ta nouvelle adresse.
+          </div>
+        )}
+        {search?.get("password_updated") && (
+          <div className="mb-3 rounded-xl border border-green-300 bg-green-50 dark:border-green-900/40 dark:bg-green-900/30 px-3 py-2 text-sm text-green-800 dark:text-green-200">
+            Ton mot de passe a bien été changé. Connecte-toi avec ton nouveau mot de passe.
           </div>
         )}
 

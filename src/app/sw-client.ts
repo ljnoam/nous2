@@ -6,7 +6,7 @@ export async function registerServiceWorker() {
 
   if ('serviceWorker' in navigator) {
     try {
-      const swUrl = '/sw.js?v=20251023';
+      const swUrl = '/sw.js?v=20251127';
       const reg = await navigator.serviceWorker.register(swUrl, { scope: '/' });
       console.log('[SW] Service worker enregistré ✅', reg);
 

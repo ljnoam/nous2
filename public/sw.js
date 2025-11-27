@@ -134,6 +134,8 @@ self.addEventListener('fetch', (event) => {
       event.respondWith(networkFirst(event, PAGE_CACHE));
       return;
     }
+    // For other navigations (like /update-password), let the browser handle them directly
+    return;
   }
 
   // Default runtime: network, fallback to cache

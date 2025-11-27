@@ -77,6 +77,13 @@ export default function WaitingPage() {
               <Share2 className="h-4 w-4" />
               Partager
             </button>
+            <a
+              href={`sms:?body=${encodeURIComponent(`Rejoins-moi sur Nous ! Crée ton compte ici : ${typeof location !== 'undefined' ? location.origin : ''}/register et utilise le code : ${code}`)}`}
+              className="inline-flex items-center gap-2 rounded-xl px-3 py-2 border border-black/10 dark:border-white/10 bg-white/70 dark:bg-neutral-900/60"
+            >
+              <span className="text-lg">💬</span>
+              SMS
+            </a>
             <button onClick={onCopy} className="inline-flex items-center gap-2 rounded-xl px-3 py-2 border border-black/10 dark:border-white/10 bg-white/70 dark:bg-neutral-900/60">
               {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               {copied ? 'Copié' : 'Copier'}

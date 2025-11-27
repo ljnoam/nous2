@@ -117,6 +117,17 @@ export default function NotesPage() {
         const newNoteObj = { ...data[0], author_name: "Moi" }
         setNotes([newNoteObj, ...notes])
         setNewNote("")
+
+        // Trigger push notification (fire and forget)
+        fetch('/api/push/notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'note',
+            notePreview: newNote,
+            couple_id: coupleId, // Optional but helps rate limiting
+          }),
+        }).catch(err => console.warn('[push] notify failed', err))
       }
     } catch (e) {
       console.error("Error adding note:", e)

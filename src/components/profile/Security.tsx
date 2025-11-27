@@ -14,7 +14,7 @@ export default function Security() {
     if (!email.trim()) { alert('Email requis'); return }
     setLoadingEmail(true)
     try {
-      const { error } = await supabase.auth.updateUser({ email: email.trim() })
+      const { error } = await supabase.auth.updateUser({ email: email.trim() }, { emailRedirectTo: `${location.origin}/login?email_updated=true` })
       if (error) throw error
       alert('Email mis à jour. Vérifie ta boîte si confirmation requise.')
       setEmail('')
@@ -24,13 +24,16 @@ export default function Security() {
   }
 
   async function updatePassword() {
-    if (password.length < 6) { alert('Mot de passe trop court'); return }
     setLoadingPwd(true)
     try {
-      const { error } = await supabase.auth.updateUser({ password })
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user?.email) throw new Error("Impossible de récupérer ton email")
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+        redirectTo: `${location.origin}/update-password`,
+      })
       if (error) throw error
-      alert('Mot de passe mis à jour')
-      setPassword('')
+      alert('Email de réinitialisation envoyé !')
     } catch (e: any) {
       alert(e.message || 'Mise à jour impossible')
     } finally { setLoadingPwd(false) }
@@ -71,16 +74,9 @@ export default function Security() {
           </button>
         </div>
         <div className="flex items-center gap-2">
-          <input
-            type="password"
-            placeholder="Nouveau mot de passe"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="flex-1 rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-3 py-2 text-sm"
-          />
           <button onClick={updatePassword} disabled={loadingPwd}
-            className="rounded-xl px-3 py-2 border border-black/10 dark:border-white/10 text-sm hover:bg-black/5 dark:hover:bg-white/10">
-            {loadingPwd ? '...' : 'Changer'}
+            className="w-full rounded-xl px-3 py-2 border border-black/10 dark:border-white/10 text-sm hover:bg-black/5 dark:hover:bg-white/10">
+            {loadingPwd ? '...' : 'Réinitialiser le mot de passe'}
           </button>
         </div>
       </div>

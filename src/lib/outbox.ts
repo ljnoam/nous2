@@ -87,6 +87,17 @@ export async function flushOutbox() {
       if (item.type === 'love_note') {
         const { error } = await supabase.from('love_notes').insert(item.payload);
         if (error) throw error;
+        
+        // Trigger push notification
+        fetch('/api/push/notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'note',
+            notePreview: item.payload.content,
+            couple_id: item.payload.couple_id,
+          }),
+        }).catch(err => console.warn('[outbox] push notify failed', err));
       } else if (item.type === 'bucket_item') {
         const { error } = await supabase.from('bucket_items').insert(item.payload);
         if (error) throw error;
