@@ -10,62 +10,80 @@ type EnableOptions = {
 const PUBLIC_VAPID_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
 
 export async function enablePush(options: EnableOptions = {}): Promise<boolean> {
-  console.log('[push] VAPID key length:', PUBLIC_VAPID_KEY?.length, PUBLIC_VAPID_KEY)
+  console.log('[push] Starting enablePush...');
+  console.log('[push] VAPID key present:', !!PUBLIC_VAPID_KEY, 'Length:', PUBLIC_VAPID_KEY?.length);
+  
   const { forceResubscribe = false } = options;
   try {
-    if (typeof window === 'undefined') return false;
+    if (typeof window === 'undefined') {
+      console.warn('[push] Window undefined');
+      return false;
+    }
 
     if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
-      console.warn('[push] Service worker ou PushManager indisponible');
+      console.warn('[push] Service worker or PushManager not available');
       return false;
     }
 
     if (!PUBLIC_VAPID_KEY) {
-      console.warn('[push] VAPID public key manquante');
+      console.error('[push] VAPID public key is missing!');
       return false;
     }
 
     if (Notification.permission === 'denied') {
-      console.warn('[push] Permission notifications deja refusee');
+      console.warn('[push] Permission denied');
       return false;
     }
 
     if (Notification.permission !== 'granted') {
+      console.log('[push] Requesting permission...');
       const permission = await Notification.requestPermission();
+      console.log('[push] Permission result:', permission);
       if (permission !== 'granted') {
-        console.warn('[push] Permission notifications refusee');
+        console.warn('[push] Permission not granted');
         return false;
       }
     }
 
+    console.log('[push] Waiting for SW ready...');
     const registration = await navigator.serviceWorker.ready;
+    console.log('[push] SW ready:', registration);
+    
     let subscription = await registration.pushManager.getSubscription();
+    console.log('[push] Existing subscription:', subscription);
 
     if (subscription && forceResubscribe) {
-      try { await subscription.unsubscribe(); } catch {}
+      console.log('[push] Force resubscribe: unsubscribing...');
+      try { await subscription.unsubscribe(); } catch (e) { console.error('[push] Unsubscribe error:', e); }
       subscription = null;
     }
 
     if (!subscription) {
-      subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(PUBLIC_VAPID_KEY),
-      });
+      console.log('[push] Subscribing new...');
+      try {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(PUBLIC_VAPID_KEY),
+        });
+        console.log('[push] New subscription created:', subscription);
+      } catch (subErr) {
+        console.error('[push] Subscribe failed:', subErr);
+        return false;
+      }
     }
 
+    console.log('[push] Syncing with server...');
     const ok = await syncSubscriptionWithServer(subscription);
-    console.log('[push] enablePush ->', ok);
+    console.log('[push] enablePush result:', ok);
     return ok;
   } catch (err: any) {
+    console.error('[push] enablePush CRITICAL error:', err);
     if (err instanceof DOMException) {
-      console.error('[push] enablePush DOMException', {
+      console.error('[push] DOMException details:', {
         name: err.name,
         message: err.message,
         code: err.code,
-        stack: err.stack,
       });
-    } else {
-      console.error('[push] enablePush error', err);
     }
     return false;
   }
