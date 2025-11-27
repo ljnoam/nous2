@@ -46,7 +46,31 @@ export async function enablePush(options: EnableOptions = {}): Promise<boolean> 
     }
 
     console.log('[push] Waiting for SW ready...');
-    const registration = await navigator.serviceWorker.ready;
+    
+    // Timeout wrapper for SW ready
+    const readyPromise = navigator.serviceWorker.ready;
+    const timeoutPromise = new Promise<ServiceWorkerRegistration | null>((_, reject) => 
+      setTimeout(() => reject(new Error('SW ready timeout')), 5000)
+    );
+
+    let registration: ServiceWorkerRegistration;
+    try {
+      // Try to get existing registration first
+      registration = await Promise.race([readyPromise, timeoutPromise]) as ServiceWorkerRegistration;
+    } catch (e) {
+      console.warn('[push] SW ready timed out or failed. Attempting manual registration...');
+      try {
+        registration = await navigator.serviceWorker.register('/sw.js');
+        console.log('[push] Manual registration successful:', registration);
+        // Wait for it to be active
+        await new Promise(resolve => setTimeout(resolve, 100));
+        registration = await navigator.serviceWorker.ready;
+      } catch (regErr) {
+        console.error('[push] Manual registration failed:', regErr);
+        return false;
+      }
+    }
+    
     console.log('[push] SW ready:', registration);
     
     let subscription = await registration.pushManager.getSubscription();
