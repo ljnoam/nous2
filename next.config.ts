@@ -19,5 +19,5 @@ export default withPWA({
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
   // optionnel mais utile pour éviter d'inclure des artefacts qui perturbent Workbox
-  buildExcludes: [/middleware-manifest\.json$/],
+  buildExcludes: [/middleware-manifest\.json$/, /app-build-manifest\.json$/],
 })(config)
