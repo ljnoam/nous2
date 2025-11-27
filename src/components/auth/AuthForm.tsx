@@ -7,7 +7,7 @@ import { Eye, EyeOff, Heart, Lock, Mail } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import React, { useEffect, useMemo, useState } from "react"
 
-type Mode = "login" | "register"
+type Mode = "login" | "register" | "forgot-password"
 
 type HeartSpec = {
   id: number
@@ -76,16 +76,39 @@ export default function AuthForm({ defaultMode = "login" as Mode }: { defaultMod
     })
   }, [router])
 
-  const title = useMemo(() => (mode === "login" ? "Connexion" : "Créer un compte"), [mode])
-  const cta = useMemo(() => (mode === "login" ? "Se connecter" : "S'inscrire"), [mode])
+  const [successMsg, setSuccessMsg] = useState<string | null>(null)
+
+  const title = useMemo(() => {
+    if (mode === "login") return "Connexion"
+    if (mode === "register") return "Créer un compte"
+    return "Mot de passe oublié"
+  }, [mode])
+
+  const cta = useMemo(() => {
+    if (mode === "login") return "Se connecter"
+    if (mode === "register") return "S'inscrire"
+    return "Envoyer le lien"
+  }, [mode])
+
   const switchText = useMemo(() => (mode === "login" ? "Pas de compte ?" : "Déjà inscrit·e ?"), [mode])
   const switchCta = useMemo(() => (mode === "login" ? "Créer un compte" : "Se connecter"), [mode])
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+    setSuccessMsg(null)
     setLoading(true)
     try {
+      if (mode === "forgot-password") {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${location.origin}/update-password`,
+        })
+        if (error) throw error
+        setSuccessMsg("Si un compte existe avec cet email, vous recevrez un lien de réinitialisation.")
+        setLoading(false)
+        return
+      }
+
       if (mode === "login") {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
@@ -137,6 +160,11 @@ export default function AuthForm({ defaultMode = "login" as Mode }: { defaultMod
             Ton mot de passe a bien été changé. Connecte-toi avec ton nouveau mot de passe.
           </div>
         )}
+        {successMsg && (
+          <div className="mb-3 rounded-xl border border-green-300 bg-green-50 dark:border-green-900/40 dark:bg-green-900/30 px-3 py-2 text-sm text-green-800 dark:text-green-200">
+            {successMsg}
+          </div>
+        )}
 
         <div className="mb-6 flex items-center justify-center gap-2 text-2xl font-semibold">
           <Heart className="h-6 w-6 text-pink-500" />
@@ -152,7 +180,9 @@ export default function AuthForm({ defaultMode = "login" as Mode }: { defaultMod
         <div className="rounded-3xl border border-black/10 dark:border-white/10 bg-white/80 dark:bg-neutral-900/70 backdrop-blur-md shadow-lg p-6 sm:p-8 relative z-10">
           <div className="mb-6 text-center">
             <h1 className="text-2xl font-semibold">{title}</h1>
-            <p className="text-sm opacity-70 mt-1">Accède à ton espace de couple</p>
+            <p className="text-sm opacity-70 mt-1">
+              {mode === 'forgot-password' ? 'Entre ton email pour réinitialiser' : 'Accède à ton espace de couple'}
+            </p>
           </div>
 
           {error && (
@@ -177,29 +207,42 @@ export default function AuthForm({ defaultMode = "login" as Mode }: { defaultMod
               </div>
             </label>
 
-            <label className="block space-y-1.5">
-              <span className="block text-sm font-medium opacity-70 ml-1">Mot de passe</span>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 opacity-50" />
-                <input
-                  className={`${inputCls} pl-10 pr-10`}
-                  placeholder="********"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete={mode === "login" ? "current-password" : "new-password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((s) => !s)}
-                  aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200 transition-colors"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </label>
+            {mode !== 'forgot-password' && (
+              <label className="block space-y-1.5">
+                <div className="flex justify-between items-center ml-1">
+                  <span className="block text-sm font-medium opacity-70">Mot de passe</span>
+                  {mode === 'login' && (
+                    <button
+                      type="button"
+                      onClick={() => setMode('forgot-password')}
+                      className="text-xs opacity-60 hover:opacity-100 hover:text-pink-500 transition-colors"
+                    >
+                      Mot de passe oublié ?
+                    </button>
+                  )}
+                </div>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 opacity-50" />
+                  <input
+                    className={`${inputCls} pl-10 pr-10`}
+                    placeholder="********"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete={mode === "login" ? "current-password" : "new-password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((s) => !s)}
+                    aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </label>
+            )}
 
             <Button className="w-full mt-2" disabled={loading} size="lg">
               {loading ? "Patiente..." : cta}
@@ -207,13 +250,24 @@ export default function AuthForm({ defaultMode = "login" as Mode }: { defaultMod
           </form>
 
           <div className="mt-6 text-center text-sm">
-            <span className="opacity-70 mr-2">{switchText}</span>
-            <button
-              onClick={() => setMode(mode === "login" ? "register" : "login")}
-              className="font-medium underline decoration-dotted underline-offset-4 hover:text-pink-500 transition-colors"
-            >
-              {switchCta}
-            </button>
+            {mode === 'forgot-password' ? (
+              <button
+                onClick={() => setMode('login')}
+                className="font-medium hover:text-pink-500 transition-colors"
+              >
+                Retour à la connexion
+              </button>
+            ) : (
+              <>
+                <span className="opacity-70 mr-2">{switchText}</span>
+                <button
+                  onClick={() => setMode(mode === "login" ? "register" : "login")}
+                  className="font-medium underline decoration-dotted underline-offset-4 hover:text-pink-500 transition-colors"
+                >
+                  {switchCta}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
