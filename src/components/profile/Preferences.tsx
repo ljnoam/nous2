@@ -2,10 +2,17 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
+import { Bell, BellOff } from 'lucide-react'
 
 type Dnd = { start: string; end: string }
 
-export default function Preferences({ userId }: { userId: string }) {
+type PreferencesProps = {
+  userId: string
+  pushEnabled: boolean
+  onTogglePush: () => void
+}
+
+export default function Preferences({ userId, pushEnabled, onTogglePush }: PreferencesProps) {
   const [loading, setLoading] = useState(true)
   const [notes, setNotes] = useState(true)
   const [bucket, setBucket] = useState(true)
@@ -50,13 +57,36 @@ export default function Preferences({ userId }: { userId: string }) {
 
   return (
     <div className="rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-neutral-900/60 backdrop-blur-md p-4 space-y-4">
-      <h2 className="text-lg font-semibold">Préférences de notifications</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Toggle label="Mots doux" checked={notes} disabled={loading} onChange={(v) => { setNotes(v); persist({ notes_enabled: v }) }} />
-        <Toggle label="Bucket list" checked={bucket} disabled={loading} onChange={(v) => { setBucket(v); persist({ bucket_enabled: v }) }} />
-        <Toggle label="Événements" checked={events} disabled={loading} onChange={(v) => { setEvents(v); persist({ events_enabled: v }) }} />
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Préférences de notifications</h2>
       </div>
-      <div className="pt-2">
+
+      {/* Master Toggle */}
+      <div className="bg-black/5 dark:bg-white/5 rounded-xl p-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className={`p-2 rounded-full ${pushEnabled ? 'bg-pink-500 text-white' : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-500'}`}>
+            {pushEnabled ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm font-medium">Notifications Push</span>
+            <span className="text-xs opacity-60">{pushEnabled ? 'Activées sur cet appareil' : 'Désactivées sur cet appareil'}</span>
+          </div>
+        </div>
+        <button
+          onClick={onTogglePush}
+          className={`relative h-6 w-11 rounded-full transition-colors ${pushEnabled ? 'bg-pink-500' : 'bg-neutral-300 dark:bg-neutral-600'}`}
+        >
+          <span className={`block h-4 w-4 bg-white rounded-full transition-transform ${pushEnabled ? 'translate-x-6' : 'translate-x-1'} mt-1`} />
+        </button>
+      </div>
+
+      <div className={`grid grid-cols-1 sm:grid-cols-3 gap-3 ${!pushEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
+        <Toggle label="Mots doux" checked={notes} disabled={loading || !pushEnabled} onChange={(v) => { setNotes(v); persist({ notes_enabled: v }) }} />
+        <Toggle label="Bucket list" checked={bucket} disabled={loading || !pushEnabled} onChange={(v) => { setBucket(v); persist({ bucket_enabled: v }) }} />
+        <Toggle label="Événements" checked={events} disabled={loading || !pushEnabled} onChange={(v) => { setEvents(v); persist({ events_enabled: v }) }} />
+      </div>
+      
+      <div className={`pt-2 ${!pushEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
         <p className="text-sm opacity-70 mb-2">Ne pas déranger</p>
         <div className="flex items-center gap-3">
           <TimeInput value={dnd.start} onChange={(v) => { const x = { ...dnd, start: v }; setDnd(x); persist({ do_not_disturb: x }) }} />
@@ -103,4 +133,5 @@ function TimeInput({ value, onChange }: { value: string; onChange: (v: string) =
     />
   )
 }
+
 

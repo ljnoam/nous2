@@ -306,21 +306,13 @@ export default function ProfilePage() {
       <StatsRow coupleId={status?.couple_id} />
 
       {/* Preferences */}
-      {me && <Preferences userId={me.id} />}
+      {me && <Preferences userId={me.id} pushEnabled={pushEnabled} onTogglePush={togglePush} />}
 
       {/* Security */}
       <Security />
 
       {/* Actions */}
       <div className="flex flex-col sm:flex-row justify-center gap-3">
-        <button
-          onClick={togglePush}
-          className="flex-1 flex items-center justify-center gap-2 rounded-full border border-black/10 dark:border-white/10 bg-black text-white dark:bg-white dark:text-black px-4 py-3 font-medium shadow hover:opacity-90 transition"
-        >
-          {pushEnabled ? <BellOff className="h-5 w-5" /> : <Bell className="h-5 w-5" />}
-          {pushEnabled ? 'Désactiver les notifs' : 'Activer les notifs'}
-        </button>
-
         <button
           onClick={logout}
           className="flex-1 flex items-center justify-center gap-2 rounded-full border border-black/10 dark:border-white/10 bg-white/80 dark:bg-neutral-900/70 px-4 py-3 font-medium shadow hover:bg-white/90 dark:hover:bg-neutral-800 transition"
