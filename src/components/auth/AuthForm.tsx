@@ -2,6 +2,7 @@
 
 import BlurText from "@/components/ui/BlurText"
 import { Button } from "@/components/ui/button"
+import { cn, getSiteUrl } from "@/lib/utils"
 import { supabase } from "@/lib/supabase/client"
 import { Eye, EyeOff, Heart, Lock, Mail } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -101,7 +102,7 @@ export default function AuthForm({ defaultMode = "login" as Mode }: { defaultMod
     try {
       if (mode === "forgot-password") {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${location.origin}/update-password`,
+          redirectTo: `${getSiteUrl()}update-password`,
         })
         if (error) throw error
         setSuccessMsg("Si un compte existe avec cet email, vous recevrez un lien de réinitialisation.")
@@ -117,7 +118,7 @@ export default function AuthForm({ defaultMode = "login" as Mode }: { defaultMod
           email,
           password,
           options: {
-            emailRedirectTo: `${location.origin}/login?confirmed=true`,
+            emailRedirectTo: `${getSiteUrl()}login?confirmed=true`,
           },
         })
         if (error) throw error

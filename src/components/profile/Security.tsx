@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
+import { getSiteUrl } from '@/lib/utils'
 
 export default function Security() {
   const [email, setEmail] = useState('')
@@ -14,7 +15,7 @@ export default function Security() {
     if (!email.trim()) { alert('Email requis'); return }
     setLoadingEmail(true)
     try {
-      const { error } = await supabase.auth.updateUser({ email: email.trim() }, { emailRedirectTo: `${location.origin}/login?email_updated=true` })
+      const { error } = await supabase.auth.updateUser({ email: email.trim() }, { emailRedirectTo: `${getSiteUrl()}login?email_updated=true` })
       if (error) throw error
       alert('Email mis à jour. Vérifie ta boîte si confirmation requise.')
       setEmail('')
@@ -30,7 +31,7 @@ export default function Security() {
       if (!user?.email) throw new Error("Impossible de récupérer ton email")
       
       const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
-        redirectTo: `${location.origin}/update-password`,
+        redirectTo: `${getSiteUrl()}update-password`,
       })
       if (error) throw error
       alert('Email de réinitialisation envoyé !')
