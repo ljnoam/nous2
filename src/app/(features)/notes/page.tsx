@@ -75,14 +75,15 @@ export default function NotesPage() {
       if (notesError) throw notesError
 
       // Fetch user names to map author_id to names
+      const authorIds = [uid, ...((notesData || []).map((n: any) => n.author_id))]
       const { data: usersData } = await supabase
-        .from("users")
+        .from('profiles')
         .select("id, first_name")
-        .in("id", [uid, ...((notesData || []).map(n => n.author_id))])
+        .in("id", authorIds)
 
-      const userMap = new Map(usersData?.map(u => [u.id, u.first_name]) || [])
+      const userMap = new Map(usersData?.map((u: any) => [u.id, u.first_name]) || [])
 
-      const formattedNotes = (notesData || []).map(n => ({
+      const formattedNotes = (notesData || []).map((n: any) => ({
         ...n,
         author_name: userMap.get(n.author_id) || (n.author_id === uid ? "Moi" : "Partenaire")
       }))

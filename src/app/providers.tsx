@@ -5,7 +5,6 @@ import { useEffect } from 'react'
 import { flushOutbox } from '@/lib/outbox'
 import { supabase } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { enablePush } from '@/lib/push'
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -16,17 +15,6 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         supabase.auth.signOut().catch(() => {})
       }
     })
-
-    const ensurePushSubscription = async (force = false) => {
-      try {
-        if (typeof window === 'undefined') return
-        if (!('Notification' in window) || Notification.permission !== 'granted') return
-        if (!('serviceWorker' in navigator)) return
-        await enablePush({ forceResubscribe: force })
-      } catch (err) {
-        console.warn('[push] auto ensure failed', err)
-      }
-    }
 
     const onSwMessage = (ev: MessageEvent<any>) => {
       const payload = ev.data
@@ -41,15 +29,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         try { document.dispatchEvent(new Event('visibilitychange')) } catch {}
         return
       }
-      if (payload && typeof payload === 'object') {
-        const type = (payload as { type?: string }).type
-        if (type === 'PUSH_SUBSCRIPTION_CHANGED') {
-          ensurePushSubscription(true).catch(() => {})
-        }
-        if (type === 'PUSH_SUBSCRIPTION_RENEWED') {
-          ensurePushSubscription(false).catch(() => {})
-        }
-      }
+      // PUSH_SUBSCRIPTION_CHANGED handled by OneSignal now
     }
 
     const onOnline = async () => {
@@ -71,16 +51,9 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       } catch {}
     }
 
-    const swUrl = '/sw.js?v=20251023'
+    // Manual SW registration removed in favor of next-pwa's auto registration (in prod)
+    // In dev, PWA is disabled to avoid conflicts with OneSignal worker.
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker
-        .register(swUrl)
-        .then(() => {
-          console.log('[SW] enregistré')
-          ensurePushSubscription(false).catch(() => {})
-        })
-        .catch((err) => console.warn('[SW] erreur', err))
-
       navigator.serviceWorker.addEventListener('message', onSwMessage)
     }
 

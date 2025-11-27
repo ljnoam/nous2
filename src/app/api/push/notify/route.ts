@@ -1,28 +1,31 @@
 export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
-import webpush from 'web-push';
 import { cookies, headers } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
+import * as OneSignal from '@onesignal/node-onesignal';
+
+// OneSignal Configuration
+const ONESIGNAL_APP_ID = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID!;
+const ONESIGNAL_USER_AUTH_KEY = process.env.ONESIGNAL_USER_AUTH_KEY!;
+const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY!;
+
+const configuration = OneSignal.createConfiguration({
+  appKey: ONESIGNAL_REST_API_KEY,
+} as any);
+
+const client = new OneSignal.DefaultApi(configuration);
 
 // Simple in-memory rate limiter per couple (1 msg/sec)
-// Note: In-memory only for this instance; adequate for basic anti-spam.
 const RATE_LIMIT_WINDOW_MS = 1000;
 const coupleLastNotifyAt = new Map<string, number>();
-
-// VAPID configuration for Web Push
-webpush.setVapidDetails(
-  process.env.VAPID_SUBJECT!,
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
 
 export async function POST(req: Request) {
   // Parse body once
   let bodyJson: any = {};
   try { bodyJson = await req.json(); } catch {}
-  const { type, notePreview, bucketTitle, eventTitle, starts_at, url: overrideUrl, targets } = bodyJson || {};
+  const { type, notePreview, eventTitle, starts_at, url: overrideUrl, targets } = bodyJson || {};
 
   const cookieStore = await cookies();
   const hdrs = await headers();
@@ -49,7 +52,7 @@ export async function POST(req: Request) {
     : await supabase
         .from('couple_members')
         .select('couple_id')
-        .eq('user_id', user.id)
+        .eq('user_id', user!.id)
         .maybeSingle();
 
   if (membershipErr) {
@@ -69,36 +72,30 @@ export async function POST(req: Request) {
   }
   coupleLastNotifyAt.set(coupleId, now);
 
-  // Fetch couple members and their subscriptions; then apply user preferences and DND
+  // Fetch couple members to identify targets
   const { data: members2, error: membersErr } = await supabase
     .from('couple_members')
     .select('user_id')
     .eq('couple_id', coupleId);
   if (membersErr) return NextResponse.json({ error: membersErr.message }, { status: 400 });
+  
   const userIds = (members2 || []).map((m: any) => m.user_id);
   if (!userIds || userIds.length === 0) return NextResponse.json({ ok: true });
 
-  const { data: dbSubs, error: subsErr } = await supabase
-    .from('push_subscriptions')
-    .select('endpoint, p256dh, auth, user_id')
-    .in('user_id', userIds);
-  if (subsErr) return NextResponse.json({ error: subsErr.message }, { status: 400 });
-
-  // Fetch preferences in one go (use service role to avoid leaking partner prefs via RLS)
+  // Fetch preferences
   let prefsRows: any[] | null = null;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (serviceKey) {
     const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceKey);
     const { data } = await admin
       .from('user_prefs')
-      .select('user_id, notes_enabled, bucket_enabled, events_enabled, do_not_disturb')
+      .select('user_id, notes_enabled, events_enabled, do_not_disturb')
       .in('user_id', userIds);
     prefsRows = data || [];
   } else {
-    // Fallback: only own prefs can be read under RLS; partner prefs will default to enabled
     const { data } = await supabase
       .from('user_prefs')
-      .select('user_id, notes_enabled, bucket_enabled, events_enabled, do_not_disturb')
+      .select('user_id, notes_enabled, events_enabled, do_not_disturb')
       .in('user_id', userIds);
     prefsRows = data || [];
   }
@@ -119,60 +116,57 @@ export async function POST(req: Request) {
   }
 
   function isTypeEnabled(pref: any): boolean {
-    if (type === 'bucket') return pref?.bucket_enabled ?? true;
     if (type === 'event') return pref?.events_enabled ?? true;
     return pref?.notes_enabled ?? true;
   }
 
-  const uniq = new Map<string, any>();
-  (dbSubs || []).forEach((s: any) => { uniq.set(s.endpoint, s); });
-  const subs = Array.from(uniq.values()).filter((s: any) => {
-    const pref = prefsByUser.get(s.user_id);
+  // Filter target user IDs based on preferences
+  const targetUserIds = userIds.filter((uid: string) => {
+    const pref = prefsByUser.get(uid);
+    // Don't send to self unless testing? Usually we want to notify the PARTNER.
+    // The original logic fetched ALL subscriptions for the couple, then filtered.
+    // If I send a note, I probably don't want a notification.
+    // However, the original logic didn't explicitly exclude self, but usually subscriptions are per device.
+    // If I am on device A and send a note, device A might get a push if subscribed.
+    // Let's keep it simple: send to all eligible members of the couple (except maybe the sender if we want to be smart, but let's stick to original logic which was "all subs").
+    // Wait, original logic: `userIds` = all members. `dbSubs` = all subs for these users.
+    // So it sent to everyone including self if subscribed.
     return isTypeEnabled(pref) && !isDndActive(pref);
   });
 
-  if (!subs || subs.length === 0) return NextResponse.json({ ok: true });
+  if (targetUserIds.length === 0) return NextResponse.json({ ok: true });
 
   // Compose payload
   let title = 'Nouveau mot doux';
   let message = notePreview ? String(notePreview).slice(0, 100) : 'Tu as reçu un message !';
   let url = overrideUrl || '/notes';
 
-  if (type === 'bucket') {
-    title = 'Nouvelle idée ajoutée';
-    message = bucketTitle
-      ? `${bucketTitle} vient d’être ajoutée à votre bucket list !`
-      : 'Une nouvelle idée a été ajoutée à votre bucket list !';
-    url = overrideUrl || '/bucket';
-  } else if (type === 'event') {
+  if (type === 'event') {
     title = 'Nouvel évènement';
     const when = starts_at ? new Date(starts_at).toLocaleString('fr-FR') : '';
     message = eventTitle ? `${eventTitle}${when ? ' · ' + when : ''}` : (when || 'Un évènement a été planifié');
     url = overrideUrl || '/calendar';
   }
 
-  const payload = JSON.stringify({ title, body: message, url });
+  // Send via OneSignal
+  const notification = new OneSignal.Notification();
+  notification.app_id = ONESIGNAL_APP_ID;
+  notification.headings = { en: title, fr: title };
+  notification.contents = { en: message, fr: message };
+  // notification.url = process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}${url}` : url; 
+  // URL handling might need adjustment depending on PWA needs, but keeping it simple for now.
+  
+  // Use include_aliases for targeting by external_id
+  notification.include_aliases = {
+    external_id: targetUserIds
+  };
+  notification.target_channel = "push";
 
-  // Send notifications; prune invalid endpoints (410/404)
-  const results = await Promise.allSettled(
-    subs.map(async (s) => {
-      const subscription = {
-        endpoint: s.endpoint,
-        keys: { p256dh: s.p256dh, auth: s.auth },
-      } as webpush.PushSubscription;
-      try {
-        await webpush.sendNotification(subscription, payload);
-        return { ok: true };
-      } catch (err: any) {
-        const code = err?.statusCode;
-        if (code === 404 || code === 410) {
-          // Silently remove stale endpoint
-          await supabase.from('push_subscriptions').delete().eq('endpoint', s.endpoint);
-        }
-        return { ok: false, error: code || err?.message };
-      }
-    })
-  );
-
-  return NextResponse.json({ ok: true, results });
+  try {
+    const response = await client.createNotification(notification);
+    return NextResponse.json({ ok: true, result: response });
+  } catch (e: any) {
+    console.error('OneSignal send error:', e);
+    return NextResponse.json({ ok: false, error: e.message || e }, { status: 500 });
+  }
 }

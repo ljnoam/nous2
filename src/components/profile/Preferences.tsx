@@ -15,7 +15,6 @@ type PreferencesProps = {
 export default function Preferences({ userId, pushEnabled, onTogglePush }: PreferencesProps) {
   const [loading, setLoading] = useState(true)
   const [notes, setNotes] = useState(true)
-  const [bucket, setBucket] = useState(true)
   const [events, setEvents] = useState(true)
   const [dnd, setDnd] = useState<Dnd>({ start: '22:00', end: '07:00' })
 
@@ -30,7 +29,6 @@ export default function Preferences({ userId, pushEnabled, onTogglePush }: Prefe
         .maybeSingle()
       if (data) {
         setNotes(!!data.notes_enabled)
-        setBucket(!!data.bucket_enabled)
         setEvents(!!data.events_enabled)
         const dj = (data.do_not_disturb as any) || {}
         setDnd({ start: dj.start || '22:00', end: dj.end || '07:00' })
@@ -47,7 +45,6 @@ export default function Preferences({ userId, pushEnabled, onTogglePush }: Prefe
   }) {
     const payload: any = { user_id: userId }
     if (next.notes_enabled !== undefined) payload.notes_enabled = next.notes_enabled
-    if (next.bucket_enabled !== undefined) payload.bucket_enabled = next.bucket_enabled
     if (next.events_enabled !== undefined) payload.events_enabled = next.events_enabled
     if (next.do_not_disturb !== undefined) payload.do_not_disturb = next.do_not_disturb
 
@@ -80,9 +77,8 @@ export default function Preferences({ userId, pushEnabled, onTogglePush }: Prefe
         </button>
       </div>
 
-      <div className={`grid grid-cols-1 sm:grid-cols-3 gap-3 ${!pushEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
+      <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 ${!pushEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
         <Toggle label="Mots doux" checked={notes} disabled={loading || !pushEnabled} onChange={(v) => { setNotes(v); persist({ notes_enabled: v }) }} />
-        <Toggle label="Bucket list" checked={bucket} disabled={loading || !pushEnabled} onChange={(v) => { setBucket(v); persist({ bucket_enabled: v }) }} />
         <Toggle label="Événements" checked={events} disabled={loading || !pushEnabled} onChange={(v) => { setEvents(v); persist({ events_enabled: v }) }} />
       </div>
       

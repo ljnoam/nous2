@@ -3,7 +3,7 @@
 
 type OutboxItem = {
   id: string;
-  type: 'love_note' | 'bucket_item' | 'event';
+  type: 'love_note' | 'event';
   payload: Record<string, any>;
   createdAt: number;
 };
@@ -89,6 +89,7 @@ export async function flushOutbox() {
         if (error) throw error;
         
         // Trigger push notification
+        // Trigger push notification
         fetch('/api/push/notify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -98,13 +99,11 @@ export async function flushOutbox() {
             couple_id: item.payload.couple_id,
           }),
         }).catch(err => console.warn('[outbox] push notify failed', err));
-      } else if (item.type === 'bucket_item') {
-        const { error } = await supabase.from('bucket_items').insert(item.payload);
-        if (error) throw error;
       } else if (item.type === 'event') {
         const { error } = await supabase.from('couple_events').insert(item.payload);
         if (error) throw error;
       }
+      
       await removeOutbox(item.id);
       console.log('[outbox] flushed', item.id);
     } catch (e) {

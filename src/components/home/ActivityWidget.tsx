@@ -2,11 +2,11 @@
 
 import { supabase } from '@/lib/supabase/client';
 import { cn, relativeTimeFromNow } from '@/lib/utils';
-import { Calendar, Heart, ListTodo } from 'lucide-react';
+import { Calendar, Heart } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 type LoveNote = { id: string; content: string; created_at: string; author_id: string; couple_id: string };
-type BucketItem = { id: string; title: string; created_at: string; couple_id: string };
+
 type CoupleEvent = { id: string; title: string; starts_at: string; couple_id: string };
 
 export default function ActivityWidget() {
@@ -15,7 +15,6 @@ export default function ActivityWidget() {
   const [coupleId, setCoupleId] = useState<string | null>(null);
 
   const [lastNote, setLastNote] = useState<LoveNote | null>(null);
-  const [lastBucket, setLastBucket] = useState<BucketItem | null>(null);
   const [nextEvent, setNextEvent] = useState<CoupleEvent | null>(null);
 
   useEffect(() => {
@@ -38,19 +37,12 @@ export default function ActivityWidget() {
         setCoupleId(cpl);
 
         // One request per resource, no N+1.
-        const [notesRes, bucketRes, eventRes] = await Promise.all([
+        const [notesRes, eventRes] = await Promise.all([
           supabase
             .from('love_notes')
             .select('id, content, created_at, author_id, couple_id')
             .eq('couple_id', cpl)
             .neq('author_id', userId)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle(),
-          supabase
-            .from('bucket_items')
-            .select('id, title, created_at, couple_id')
-            .eq('couple_id', cpl)
             .order('created_at', { ascending: false })
             .limit(1)
             .maybeSingle(),
@@ -66,7 +58,6 @@ export default function ActivityWidget() {
 
         if (!mounted) return;
         setLastNote(notesRes?.data ?? null);
-        setLastBucket(bucketRes?.data ?? null);
         setNextEvent(eventRes?.data ?? null);
       } catch (e) {
         console.error('ActivityWidget error:', JSON.stringify(e));
@@ -78,7 +69,7 @@ export default function ActivityWidget() {
   }, []);
 
   return (
-    <section aria-label="Activité récente" className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+    <section aria-label="Activité récente" className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
       <ActivityCard
         icon={<Heart className="h-4 w-4 text-pink-600 dark:text-pink-400" aria-hidden />}
         title="Dernier mot doux"
@@ -86,14 +77,6 @@ export default function ActivityWidget() {
         empty="Aucun mot doux reçu pour l'instant"
         content={lastNote ? truncate(lastNote.content, 60) : undefined}
         meta={lastNote ? relativeTimeFromNow(lastNote.created_at) : undefined}
-      />
-      <ActivityCard
-        icon={<ListTodo className="h-4 w-4 text-rose-600 dark:text-rose-400" aria-hidden />}
-        title="Dernier ajout bucket"
-        loading={loading}
-        empty="Ta bucket list est vide"
-        content={lastBucket ? truncate(lastBucket.title, 60) : undefined}
-        meta={lastBucket ? relativeTimeFromNow(lastBucket.created_at) : undefined}
       />
       <ActivityCard
         icon={<Calendar className="h-4 w-4 text-fuchsia-600 dark:text-fuchsia-400" aria-hidden />}

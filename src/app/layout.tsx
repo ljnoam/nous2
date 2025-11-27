@@ -41,6 +41,8 @@ export const metadata = {
   },
 }
 
+import OneSignalInit from '@/components/OneSignalInit'
+
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies()
   const hdrs = await headers()
@@ -59,8 +61,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     }
   )
 
-  const { data: { session } } = await supabase.auth.getSession()
-  const hasSession = !!session
+  const { data: { user } } = await supabase.auth.getUser()
+  const hasSession = !!user
 
   return (
     <html lang="fr" suppressHydrationWarning>
@@ -69,11 +71,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           min-h-screen min-h-[var(--viewport-height)]
           bg-white text-neutral-900
           dark:bg-neutral-950 dark:text-neutral-50
-          font-sans antialiased flex flex-col overflow-hidden
+          font-sans antialiased flex flex-col
           ${caveat.variable} ${indie.variable} ${patrick.variable} ${shadows.variable}
         `}
         data-has-session={hasSession ? '1' : '0'}
       >
+        <OneSignalInit userId={user?.id} />
         <SplashScreen />
         <InstallBanner />
         <Providers>{children}</Providers>

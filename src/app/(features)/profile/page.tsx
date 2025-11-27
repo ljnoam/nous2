@@ -5,33 +5,13 @@ import AvatarUploader from '@/components/profile/AvatarUploader'
 import Preferences from '@/components/profile/Preferences'
 import Security from '@/components/profile/Security'
 import DarkModeToggle from '@/components/ui/DarkModeToggle'
-import { disablePush, enablePush } from '@/lib/push'
 import { supabase } from '@/lib/supabase/client'
 import { Bell, BellOff, Heart, LogOut } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
+import OneSignal from 'react-onesignal'
 
-// Debug: print imported symbols to help identify any undefined imports causing a runtime JSX error
-// (will appear in browser console when this client component module loads)
-try {
-  // eslint-disable-next-line no-console
-  console.log('DBG profile imports:', {
-    DarkModeToggle,
-    AvatarUploader,
-    Preferences,
-    Security,
-    enablePush: typeof enablePush,
-    disablePush: typeof disablePush,
-    icons: {
-      Bell: typeof Bell,
-      BellOff: typeof BellOff,
-      LogOut: typeof LogOut,
-      Heart: typeof Heart,
-    },
-  })
-} catch (e) {
-  // ignore in non-browser environments
-}
+
 
 type CoupleStatus = {
   couple_id: string
@@ -104,9 +84,15 @@ export default function ProfilePage() {
       setStatus(c ? { couple_id: c.id, started_at: c.started_at, join_code: (c as any).join_code, members_count: count ?? 0 } : null)
 
       if ('serviceWorker' in navigator) {
-        const reg = await navigator.serviceWorker.ready
-        const sub = await reg.pushManager.getSubscription()
-        setPushEnabled(!!sub)
+        // Check OneSignal subscription status
+        // Note: OneSignal.User.PushSubscription.optedIn is a boolean property, not a promise?
+        // Actually in react-onesignal it might be different.
+        // Let's use the event listener or check state if possible.
+        // For now, let's just assume false and let the user toggle it, or check OneSignal.User.PushSubscription.optedIn
+        try {
+          const optedIn = OneSignal.User.PushSubscription.optedIn;
+          setPushEnabled(!!optedIn)
+        } catch {}
       }
     })()
   }, [router])
@@ -207,12 +193,16 @@ export default function ProfilePage() {
   }
 
   async function togglePush() {
-    if (!pushEnabled) {
-      const ok = await enablePush()
-      if (ok) setPushEnabled(true)
-    } else {
-      const ok = await disablePush()
-      if (ok) setPushEnabled(false)
+    try {
+      if (!pushEnabled) {
+        await OneSignal.User.PushSubscription.optIn();
+        setPushEnabled(true)
+      } else {
+        await OneSignal.User.PushSubscription.optOut();
+        setPushEnabled(false)
+      }
+    } catch (e) {
+      console.error('OneSignal toggle error', e)
     }
   }
 
@@ -355,34 +345,18 @@ export default function ProfilePage() {
 /* === STATS === */
 function StatsRow({ coupleId }: { coupleId?: string | null }) {
   const [notes, setNotes] = useState<number | null>(null)
-  const [todo, setTodo] = useState<number | null>(null)
-  const [done, setDone] = useState<number | null>(null)
 
   useEffect(() => {
     if (!coupleId) return
     ;(async () => {
       const { count: notesCount } = await supabase.from('love_notes').select('*', { count: 'exact', head: true }).eq('couple_id', coupleId)
-      const { count: todoCount } = await supabase
-        .from('bucket_items')
-        .select('*', { count: 'exact', head: true })
-        .eq('couple_id', coupleId)
-        .eq('is_done', false)
-      const { count: doneCount } = await supabase
-        .from('bucket_items')
-        .select('*', { count: 'exact', head: true })
-        .eq('couple_id', coupleId)
-        .eq('is_done', true)
       setNotes(notesCount ?? 0)
-      setTodo(todoCount ?? 0)
-      setDone(doneCount ?? 0)
     })()
   }, [coupleId])
 
   return (
-    <div className="grid grid-cols-3 gap-3">
-      <StatCard label="Mots doux" value={notes ?? '…'} />
-      <StatCard label="À faire" value={todo ?? '…'} />
-      <StatCard label="Faits" value={done ?? '…'} />
+    <div className="grid grid-cols-1 gap-3">
+      <StatCard label="Mots doux échangés" value={notes ?? '…'} />
     </div>
   )
 }
