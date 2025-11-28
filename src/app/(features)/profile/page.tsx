@@ -10,6 +10,7 @@ import { Bell, BellOff, Heart, LogOut } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import OneSignal from 'react-onesignal'
+import { usePWAStatus } from '@/hooks/usePWAStatus'
 
 
 
@@ -22,10 +23,10 @@ type CoupleStatus = {
 
 export default function ProfilePage() {
   const router = useRouter()
+  const { isStandalone } = usePWAStatus()
   const [me, setMe] = useState<any>(null)
   const [profile, setProfile] = useState<{ first_name?: string | null; avatar_url?: string | null } | null>(null)
   const [status, setStatus] = useState<CoupleStatus | null>(null)
-  const [pushEnabled, setPushEnabled] = useState(false)
   const [editingName, setEditingName] = useState(false)
   const [firstNameInput, setFirstNameInput] = useState('')
   const [partner, setPartner] = useState<{ first_name?: string | null; display_name?: string | null; avatar_url?: string | null } | null>(null)
@@ -82,18 +83,6 @@ export default function ProfilePage() {
 
       const { count } = await supabase.from('couple_members').select('*', { count: 'exact', head: true }).eq('couple_id', cm.couple_id)
       setStatus(c ? { couple_id: c.id, started_at: c.started_at, join_code: (c as any).join_code, members_count: count ?? 0 } : null)
-
-      if ('serviceWorker' in navigator) {
-        // Check OneSignal subscription status
-        // Note: OneSignal.User.PushSubscription.optedIn is a boolean property, not a promise?
-        // Actually in react-onesignal it might be different.
-        // Let's use the event listener or check state if possible.
-        // For now, let's just assume false and let the user toggle it, or check OneSignal.User.PushSubscription.optedIn
-        try {
-          const optedIn = OneSignal.User.PushSubscription.optedIn;
-          setPushEnabled(!!optedIn)
-        } catch {}
-      }
     })()
   }, [router])
 
@@ -192,19 +181,7 @@ export default function ProfilePage() {
     router.replace('/register')
   }
 
-  async function togglePush() {
-    try {
-      if (!pushEnabled) {
-        await OneSignal.User.PushSubscription.optIn();
-        setPushEnabled(true)
-      } else {
-        await OneSignal.User.PushSubscription.optOut();
-        setPushEnabled(false)
-      }
-    } catch (e) {
-      console.error('OneSignal toggle error', e)
-    }
-  }
+
 
   return (
     <>
@@ -296,7 +273,7 @@ export default function ProfilePage() {
       <StatsRow coupleId={status?.couple_id} />
 
       {/* Preferences */}
-      {me && <Preferences userId={me.id} pushEnabled={pushEnabled} onTogglePush={togglePush} />}
+      {me && <Preferences userId={me.id} />}
 
       {/* Security */}
       <Security />

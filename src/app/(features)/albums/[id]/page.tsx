@@ -194,21 +194,21 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
     console.log('URLs:', { url: urlData.publicUrl, thumb: thumbUrlData.publicUrl })
 
     console.log('Step 6: Saving to database...')
-    // Save to database (let PostgreSQL generate the UUID automatically)
-    const { error: dbError } = await supabase.from('photos').insert({
-      album_id: album.id,
-      couple_id: coupleId,
-      url: urlData.publicUrl,
-      thumbnail_url: thumbUrlData.publicUrl,
-      latitude,
-      longitude,
-      taken_at: exifData?.DateTimeOriginal || null,
-      uploaded_by: me
-    })
-
-    if (dbError) {
-      console.error('Database insert error:', dbError)
-      throw new Error(`Database insert failed: ${dbError.message}`)
+    // Save to database using Server Action
+    const { uploadPhoto: savePhoto } = await import('@/lib/actions')
+    try {
+      await savePhoto({
+        album_id: album.id,
+        couple_id: coupleId,
+        url: urlData.publicUrl,
+        thumbnail_url: thumbUrlData.publicUrl,
+        latitude,
+        longitude,
+        taken_at: exifData?.DateTimeOriginal || null,
+      })
+    } catch (e: any) {
+      console.error('Database insert error:', e)
+      throw new Error(`Database insert failed: ${e.message}`)
     }
 
     console.log('Photo uploaded successfully!')

@@ -10,26 +10,8 @@ export default function OneSignalInit({ userId }: { userId?: string }) {
         await OneSignal.init({
           appId: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID || '',
           allowLocalhostAsSecureOrigin: true,
-          promptOptions: {
-            slidedown: {
-              prompts: [
-                {
-                  type: "push",
-                  autoPrompt: true,
-                  categories: [],
-                  text: {
-                    actionMessage: "Nous aimerions vous envoyer des notifications pour les nouveaux messages.",
-                    acceptButton: "Autoriser",
-                    cancelMessage: "Plus tard"
-                  },
-                  delay: {
-                    pageViews: 1,
-                    timeDelay: 5
-                  }
-                }
-              ]
-            }
-          }
+          // Silent init: no autoPrompt, no slidedown configuration here.
+          // We trigger it manually via OneSignal.Slidedown.promptPush()
         });
 
         if (userId) {

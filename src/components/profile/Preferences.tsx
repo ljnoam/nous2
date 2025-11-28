@@ -2,20 +2,19 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
-import { Bell, BellOff } from 'lucide-react'
+import NotificationToggle from '@/components/NotificationToggle'
 
 type Dnd = { start: string; end: string }
 
 type PreferencesProps = {
   userId: string
-  pushEnabled: boolean
-  onTogglePush: () => void
 }
 
-export default function Preferences({ userId, pushEnabled, onTogglePush }: PreferencesProps) {
+export default function Preferences({ userId }: PreferencesProps) {
   const [loading, setLoading] = useState(true)
-  const [notes, setNotes] = useState(true)
-  const [events, setEvents] = useState(true)
+  const [notifyNotes, setNotifyNotes] = useState(true)
+  const [notifyCalendar, setNotifyCalendar] = useState(true)
+  const [notifyGallery, setNotifyGallery] = useState(true)
   const [dnd, setDnd] = useState<Dnd>({ start: '22:00', end: '07:00' })
 
   useEffect(() => {
@@ -24,12 +23,13 @@ export default function Preferences({ userId, pushEnabled, onTogglePush }: Prefe
       setLoading(true)
       const { data } = await supabase
         .from('user_prefs')
-        .select('notes_enabled, bucket_enabled, events_enabled, do_not_disturb')
+        .select('notify_notes, notify_calendar, notify_gallery, do_not_disturb')
         .eq('user_id', userId)
         .maybeSingle()
       if (data) {
-        setNotes(!!data.notes_enabled)
-        setEvents(!!data.events_enabled)
+        setNotifyNotes(data.notify_notes !== false) // Default true
+        setNotifyCalendar(data.notify_calendar !== false)
+        setNotifyGallery(data.notify_gallery !== false)
         const dj = (data.do_not_disturb as any) || {}
         setDnd({ start: dj.start || '22:00', end: dj.end || '07:00' })
       }
@@ -38,14 +38,15 @@ export default function Preferences({ userId, pushEnabled, onTogglePush }: Prefe
   }, [userId])
 
   async function persist(next: {
-    notes_enabled?: boolean
-    bucket_enabled?: boolean
-    events_enabled?: boolean
+    notify_notes?: boolean
+    notify_calendar?: boolean
+    notify_gallery?: boolean
     do_not_disturb?: Dnd
   }) {
     const payload: any = { user_id: userId }
-    if (next.notes_enabled !== undefined) payload.notes_enabled = next.notes_enabled
-    if (next.events_enabled !== undefined) payload.events_enabled = next.events_enabled
+    if (next.notify_notes !== undefined) payload.notify_notes = next.notify_notes
+    if (next.notify_calendar !== undefined) payload.notify_calendar = next.notify_calendar
+    if (next.notify_gallery !== undefined) payload.notify_gallery = next.notify_gallery
     if (next.do_not_disturb !== undefined) payload.do_not_disturb = next.do_not_disturb
 
     const { error } = await supabase.from('user_prefs').upsert(payload)
@@ -58,31 +59,16 @@ export default function Preferences({ userId, pushEnabled, onTogglePush }: Prefe
         <h2 className="text-lg font-semibold">Préférences de notifications</h2>
       </div>
 
-      {/* Master Toggle */}
-      <div className="bg-black/5 dark:bg-white/5 rounded-xl p-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className={`p-2 rounded-full ${pushEnabled ? 'bg-pink-500 text-white' : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-500'}`}>
-            {pushEnabled ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
-          </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-medium">Notifications Push</span>
-            <span className="text-xs opacity-60">{pushEnabled ? 'Activées sur cet appareil' : 'Désactivées sur cet appareil'}</span>
-          </div>
-        </div>
-        <button
-          onClick={onTogglePush}
-          className={`relative h-6 w-11 rounded-full transition-colors ${pushEnabled ? 'bg-pink-500' : 'bg-neutral-300 dark:bg-neutral-600'}`}
-        >
-          <span className={`block h-4 w-4 bg-white rounded-full transition-transform ${pushEnabled ? 'translate-x-6' : 'translate-x-1'} mt-1`} />
-        </button>
-      </div>
+      {/* Master Toggle (OneSignal Permission) */}
+      <NotificationToggle />
 
-      <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 ${!pushEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
-        <Toggle label="Mots doux" checked={notes} disabled={loading || !pushEnabled} onChange={(v) => { setNotes(v); persist({ notes_enabled: v }) }} />
-        <Toggle label="Événements" checked={events} disabled={loading || !pushEnabled} onChange={(v) => { setEvents(v); persist({ events_enabled: v }) }} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Toggle label="Nouvelles Notes" checked={notifyNotes} disabled={loading} onChange={(v) => { setNotifyNotes(v); persist({ notify_notes: v }) }} />
+        <Toggle label="Agenda / Événements" checked={notifyCalendar} disabled={loading} onChange={(v) => { setNotifyCalendar(v); persist({ notify_calendar: v }) }} />
+        <Toggle label="Nouvelles Photos" checked={notifyGallery} disabled={loading} onChange={(v) => { setNotifyGallery(v); persist({ notify_gallery: v }) }} />
       </div>
       
-      <div className={`pt-2 ${!pushEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
+      <div className="pt-2">
         <p className="text-sm opacity-70 mb-2">Ne pas déranger</p>
         <div className="flex items-center gap-3">
           <TimeInput value={dnd.start} onChange={(v) => { const x = { ...dnd, start: v }; setDnd(x); persist({ do_not_disturb: x }) }} />

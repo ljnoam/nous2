@@ -100,38 +100,19 @@ export default function NotesPage() {
 
     setIsSubmitting(true)
     try {
-      const { data, error } = await supabase
-        .from("love_notes")
-        .insert([
-          {
-            content: newNote,
-            couple_id: coupleId,
-            author_id: me,
-          },
-        ])
-        .select()
-
-      if (error) throw error
+      // Use Server Action
+      const { createNote } = await import('@/lib/actions')
+      const data = await createNote(newNote, coupleId)
 
       if (data) {
         // Optimistically add note with "Moi" as author
-        const newNoteObj = { ...data[0], author_name: "Moi" }
+        const newNoteObj = { ...data, author_name: "Moi" }
         setNotes([newNoteObj, ...notes])
         setNewNote("")
-
-        // Trigger push notification (fire and forget)
-        fetch('/api/push/notify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'note',
-            notePreview: newNote,
-            couple_id: coupleId, // Optional but helps rate limiting
-          }),
-        }).catch(err => console.warn('[push] notify failed', err))
       }
     } catch (e) {
       console.error("Error adding note:", e)
+      alert("Erreur lors de l'ajout de la note")
     } finally {
       setIsSubmitting(false)
     }

@@ -162,26 +162,27 @@ export default function CalendarPage() {
       return;
     }
 
-    const { error } = await supabase.from('couple_events').insert({
-      title: t,
-      starts_at,
-      ends_at,
-      notes: notes.trim() || null,
-      author_id: me,
-      couple_id: coupleId,
-      all_day: allDay,
-    });
-    if (error) { alert(error.message); return; }
-    setTitle(""); setStart(""); setEnd(""); setNotes(""); setAllDay(false);
-
+    // Server Action
     try {
-      await fetch('/api/push/notify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'event', eventTitle: t, starts_at }),
-      });
-    } catch (e) {
-      console.warn('push notify failed', e);
+      const { createEvent } = await import('@/lib/actions')
+      const data = await createEvent({
+        title: t,
+        starts_at,
+        ends_at,
+        notes: notes.trim() || null,
+        couple_id: coupleId,
+        all_day: allDay,
+      })
+      
+      // Optimistic update handled by realtime subscription usually, but we can add it manually if needed.
+      // The existing code relies on realtime or refetch?
+      // Actually the existing code didn't update state manually for insert, it relied on realtime subscription (lines 89-118).
+      // So we just need to call the action.
+      
+      setTitle(""); setStart(""); setEnd(""); setNotes(""); setAllDay(false);
+    } catch (e: any) {
+      console.error("Error creating event:", e)
+      alert(e.message)
     }
   }
 
