@@ -4,8 +4,6 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import NotificationToggle from '@/components/NotificationToggle'
 
-type Dnd = { start: string; end: string }
-
 type PreferencesProps = {
   userId: string
 }
@@ -15,7 +13,6 @@ export default function Preferences({ userId }: PreferencesProps) {
   const [notifyNotes, setNotifyNotes] = useState(true)
   const [notifyCalendar, setNotifyCalendar] = useState(true)
   const [notifyGallery, setNotifyGallery] = useState(true)
-  const [dnd, setDnd] = useState<Dnd>({ start: '22:00', end: '07:00' })
 
   useEffect(() => {
     if (!userId) return
@@ -23,15 +20,13 @@ export default function Preferences({ userId }: PreferencesProps) {
       setLoading(true)
       const { data } = await supabase
         .from('user_prefs')
-        .select('notify_notes, notify_calendar, notify_gallery, do_not_disturb')
+        .select('notify_notes, notify_calendar, notify_gallery')
         .eq('user_id', userId)
         .maybeSingle()
       if (data) {
         setNotifyNotes(data.notify_notes !== false) // Default true
         setNotifyCalendar(data.notify_calendar !== false)
         setNotifyGallery(data.notify_gallery !== false)
-        const dj = (data.do_not_disturb as any) || {}
-        setDnd({ start: dj.start || '22:00', end: dj.end || '07:00' })
       }
       setLoading(false)
     })()
@@ -41,13 +36,11 @@ export default function Preferences({ userId }: PreferencesProps) {
     notify_notes?: boolean
     notify_calendar?: boolean
     notify_gallery?: boolean
-    do_not_disturb?: Dnd
   }) {
     const payload: any = { user_id: userId }
     if (next.notify_notes !== undefined) payload.notify_notes = next.notify_notes
     if (next.notify_calendar !== undefined) payload.notify_calendar = next.notify_calendar
     if (next.notify_gallery !== undefined) payload.notify_gallery = next.notify_gallery
-    if (next.do_not_disturb !== undefined) payload.do_not_disturb = next.do_not_disturb
 
     const { error } = await supabase.from('user_prefs').upsert(payload)
     if (error) alert(error.message)
@@ -66,16 +59,6 @@ export default function Preferences({ userId }: PreferencesProps) {
         <Toggle label="Nouvelles Notes" checked={notifyNotes} disabled={loading} onChange={(v) => { setNotifyNotes(v); persist({ notify_notes: v }) }} />
         <Toggle label="Agenda / Événements" checked={notifyCalendar} disabled={loading} onChange={(v) => { setNotifyCalendar(v); persist({ notify_calendar: v }) }} />
         <Toggle label="Nouvelles Photos" checked={notifyGallery} disabled={loading} onChange={(v) => { setNotifyGallery(v); persist({ notify_gallery: v }) }} />
-      </div>
-      
-      <div className="pt-2">
-        <p className="text-sm opacity-70 mb-2">Ne pas déranger</p>
-        <div className="flex items-center gap-3">
-          <TimeInput value={dnd.start} onChange={(v) => { const x = { ...dnd, start: v }; setDnd(x); persist({ do_not_disturb: x }) }} />
-          <span className="opacity-60 text-sm">—</span>
-          <TimeInput value={dnd.end} onChange={(v) => { const x = { ...dnd, end: v }; setDnd(x); persist({ do_not_disturb: x }) }} />
-        </div>
-        <p className="text-xs opacity-60 mt-1">Silence entre ces heures locales.</p>
       </div>
     </div>
   )
@@ -102,17 +85,6 @@ function Toggle({ label, checked, onChange, disabled }: { label: string; checked
         <span className={`block h-4 w-4 bg-white rounded-full transition ${checked ? 'translate-x-5' : ''}`}></span>
       </span>
     </button>
-  )
-}
-
-function TimeInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  return (
-    <input
-      type="time"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-3 py-2 text-sm"
-    />
   )
 }
 

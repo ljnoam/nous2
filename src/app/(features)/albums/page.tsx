@@ -3,10 +3,21 @@
 import HeartBackground from '@/components/home/HeartBackground'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabase/client'
-import { Lock, Map as MapIcon, Plus, Unlock } from 'lucide-react'
+import { Lock, Map as MapIcon, Plus, Unlock, ChevronRight, Images, ChevronDown, ChevronUp } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerClose,
+  DrawerTrigger,
+} from "@/components/ui/drawer"
+import { Switch } from "@/components/ui/switch"
 
 type Album = {
   id: string
@@ -26,7 +37,7 @@ export default function AlbumsPage() {
   const [albums, setAlbums] = useState<Album[]>([])
   const [showPrivate, setShowPrivate] = useState(false)
   const [view, setView] = useState<'grid' | 'map'>('grid')
-  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
   useEffect(() => {
     ;(async () => {
@@ -76,13 +87,13 @@ export default function AlbumsPage() {
             .select('*', { count: 'exact', head: true })
             .eq('album_id', album.id)
 
-          // Get first 4 photos for cover grid
+          // Get first 1 photo for cover
           const { data: coverPhotos } = await supabase
             .from('photos')
             .select('thumbnail_url, url')
             .eq('album_id', album.id)
             .order('created_at', { ascending: false })
-            .limit(4)
+            .limit(1)
 
           return {
             ...album,
@@ -98,37 +109,36 @@ export default function AlbumsPage() {
   const normalAlbums = albums.filter(a => !a.is_private)
   const privateAlbums = albums.filter(a => a.is_private)
 
+  const containerStyle: CSSProperties = {
+    "--gap": "16px",
+  } as any;
+
   return (
     <>
       <HeartBackground />
-      <main className="relative z-10 min-h-screen pt-8 pb-28 px-4">
+      
+      <main 
+        style={containerStyle}
+        className="relative z-10 min-h-screen pb-28 px-4 pt-[calc(env(safe-area-inset-top)+var(--gap))]"
+      >
         <div className="max-w-6xl mx-auto space-y-6">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold">Albums Photo 📸</h1>
-              <p className="text-sm opacity-70 mt-1">
-                {albums.length} album{albums.length > 1 ? 's' : ''}
-              </p>
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                onClick={() => setView(view === 'grid' ? 'map' : 'grid')}
-                variant="outline"
-                className="rounded-2xl"
+          
+          {/* Floating Header */}
+          <div className="sticky top-[calc(env(safe-area-inset-top)+var(--gap))] z-20">
+            <div className="flex items-center justify-between rounded-2xl border border-black/10 dark:border-white/10 bg-white/80 dark:bg-neutral-900/70 backdrop-blur-md shadow-lg p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-pink-500/10 rounded-xl text-pink-600 dark:text-pink-400">
+                  <Images className="h-5 w-5" />
+                </div>
+                <h1 className="text-xl font-bold tracking-tight">Albums</h1>
+              </div>
+              
+              <button
+                onClick={() => setIsDrawerOpen(true)}
+                className="p-2 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 active:scale-95 transition"
               >
-                <MapIcon className="h-4 w-4 mr-2" />
-                {view === 'grid' ? 'Carte' : 'Grille'}
-              </Button>
-
-              <Button
-                onClick={() => setShowCreateModal(true)}
-                className="rounded-2xl"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Nouvel album
-              </Button>
+                <Plus className="h-5 w-5" />
+              </button>
             </div>
           </div>
 
@@ -136,15 +146,13 @@ export default function AlbumsPage() {
             <>
               {/* Normal Albums */}
               <section>
-                <h2 className="text-xl font-semibold mb-4">Albums</h2>
                 {normalAlbums.length === 0 ? (
-                  <div className="rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-neutral-900/60 backdrop-blur-md p-8 text-center">
+                  <div className="flex flex-col items-center justify-center py-12 opacity-50">
                     <div className="text-4xl mb-2">📷</div>
-                    <p className="opacity-70">Aucun album pour le moment</p>
-                    <p className="text-sm opacity-60 mt-1">Crée ton premier album pour commencer !</p>
+                    <p>Aucun album</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-6">
                     {normalAlbums.map(album => (
                       <AlbumCard key={album.id} album={album} />
                     ))}
@@ -152,40 +160,38 @@ export default function AlbumsPage() {
                 )}
               </section>
 
-              {/* Private Albums */}
-              <section>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold flex items-center gap-2">
-                    <Lock className="h-5 w-5" />
-                    Albums Privés
-                  </h2>
-                  <Button
-                    onClick={() => setShowPrivate(!showPrivate)}
-                    variant="ghost"
-                    size="sm"
-                    className="rounded-2xl"
-                  >
-                    {showPrivate ? <Unlock className="h-4 w-4 mr-2" /> : <Lock className="h-4 w-4 mr-2" />}
-                    {showPrivate ? 'Masquer' : 'Afficher'}
-                  </Button>
+              {/* Private Albums Section */}
+              <section className="pt-4">
+                <div 
+                  onClick={() => setShowPrivate(!showPrivate)}
+                  className="rounded-2xl border border-black/5 dark:border-white/5 bg-white/50 dark:bg-neutral-900/50 p-4 flex items-center justify-between cursor-pointer active:bg-black/5 dark:active:bg-white/5 transition backdrop-blur-sm"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
+                      <Lock className="h-5 w-5 opacity-50" />
+                    </div>
+                    <span className="font-medium">Albums Masqués</span>
+                  </div>
+                  {showPrivate ? (
+                    <ChevronUp className="h-5 w-5 opacity-30" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 opacity-30" />
+                  )}
                 </div>
 
-                {showPrivate ? (
-                  privateAlbums.length === 0 ? (
-                    <div className="rounded-2xl border border-pink-200/20 dark:border-pink-800/20 bg-pink-50/50 dark:bg-pink-900/20 backdrop-blur-md p-6 text-center">
-                      <p className="opacity-70">Aucun album privé</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {privateAlbums.map(album => (
-                        <AlbumCard key={album.id} album={album} />
-                      ))}
-                    </div>
-                  )
-                ) : (
-                  <div className="rounded-2xl border border-pink-200/20 dark:border-pink-800/20 bg-pink-50/50 dark:bg-pink-900/20 backdrop-blur-md p-6 text-center">
-                    <Lock className="h-8 w-8 mx-auto opacity-50 mb-2" />
-                    <p className="text-sm opacity-70">Clique sur "Afficher" pour voir les albums privés</p>
+                {showPrivate && (
+                  <div className="mt-6 animate-in fade-in slide-in-from-top-2 duration-300">
+                    {privateAlbums.length === 0 ? (
+                      <div className="py-8 text-center opacity-50 text-sm">
+                        Aucun album privé
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-6">
+                        {privateAlbums.map(album => (
+                          <AlbumCard key={album.id} album={album} />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </section>
@@ -199,14 +205,15 @@ export default function AlbumsPage() {
           )}
         </div>
 
-        {/* Create Album Modal */}
-        {showCreateModal && coupleId && me && (
-          <CreateAlbumModal
+        {/* Create Album Drawer */}
+        {coupleId && me && (
+          <CreateAlbumDrawer
+            open={isDrawerOpen}
+            onOpenChange={setIsDrawerOpen}
             coupleId={coupleId}
             userId={me}
-            onClose={() => setShowCreateModal(false)}
             onSuccess={() => {
-              setShowCreateModal(false)
+              setIsDrawerOpen(false)
               if (coupleId) fetchAlbums(coupleId)
             }}
           />
@@ -217,68 +224,52 @@ export default function AlbumsPage() {
 }
 
 function AlbumCard({ album }: { album: Album }) {
-  const coverPhotos = album.cover_photos || []
+  const cover = album.cover_photos?.[0]
 
   return (
-    <Link href={`/albums/${album.id}`}>
-      <div className="group relative rounded-2xl border border-black/10 dark:border-white/10 bg-white/80 dark:bg-neutral-900/70 backdrop-blur-md overflow-hidden hover:scale-[1.02] transition-transform shadow-lg">
-        {/* Cover Photo Grid (2x2) */}
-        <div className="aspect-square bg-gradient-to-br from-pink-100 to-rose-200 dark:from-pink-900/30 dark:to-rose-800/30 relative">
-          {coverPhotos.length > 0 ? (
-            <div className="grid grid-cols-2 grid-rows-2 gap-0.5 w-full h-full">
-              {[0, 1, 2, 3].map((index) => (
-                <div key={index} className="relative bg-neutral-200 dark:bg-neutral-800">
-                  {coverPhotos[index] ? (
-                    <img
-                      src={coverPhotos[index].thumbnail_url || coverPhotos[index].url}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-3xl opacity-30">
-                      📷
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-6xl opacity-50">
-             📷
-            </div>
-          )}
-
-          {album.is_private && (
-            <div className="absolute top-2 right-2 bg-pink-500 text-white rounded-full p-2">
-              <Lock className="h-4 w-4" />
-            </div>
-          )}
-        </div>
-
-        {/* Info */}
-        <div className="p-4">
-          <h3 className="font-semibold text-lg line-clamp-1">{album.title}</h3>
-          {album.description && (
-            <p className="text-sm opacity-70 line-clamp-2 mt-1">{album.description}</p>
-          )}
-          <p className="text-xs opacity-60 mt-2">
-            {album.photo_count || 0} photo{(album.photo_count || 0) > 1 ? 's' : ''}
-          </p>
-        </div>
+    <Link href={`/albums/${album.id}`} className="group block">
+      <div className="relative aspect-square rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 mb-3 shadow-sm border border-black/5 dark:border-white/5">
+        {cover ? (
+          <img
+            src={cover.thumbnail_url || cover.url}
+            alt=""
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <span className="text-2xl opacity-20">📷</span>
+          </div>
+        )}
+        {album.is_private && (
+          <div className="absolute top-2 right-2 bg-black/50 backdrop-blur-md text-white rounded-full p-1.5">
+            <Lock className="h-3 w-3" />
+          </div>
+        )}
+      </div>
+      
+      <div className="px-1">
+        <h3 className="font-semibold text-[15px] leading-tight truncate text-black dark:text-white">
+          {album.title}
+        </h3>
+        <p className="text-[13px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+          {album.photo_count || 0} photo{(album.photo_count || 0) > 1 ? 's' : ''}
+        </p>
       </div>
     </Link>
   )
 }
 
-function CreateAlbumModal({
+function CreateAlbumDrawer({
+  open,
+  onOpenChange,
   coupleId,
   userId,
-  onClose,
   onSuccess
 }: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
   coupleId: string
   userId: string
-  onClose: () => void
   onSuccess: () => void
 }) {
   const [title, setTitle] = useState('')
@@ -305,65 +296,65 @@ function CreateAlbumModal({
       return
     }
 
+    setTitle('')
+    setDescription('')
+    setIsPrivate(false)
     onSuccess()
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-black/10 dark:border-white/10 p-6 max-w-md w-full shadow-xl">
-        <h2 className="text-xl font-bold mb-4">Créer un album</h2>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Titre</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Vacances 2024"
-              className="w-full rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-pink-500"
-              autoFocus
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Description (optionnel)</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Nos meilleurs moments..."
-              className="w-full rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-pink-500 resize-none"
-              rows={3}
-            />
-          </div>
-
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isPrivate}
-              onChange={(e) => setIsPrivate(e.target.checked)}
-              className="rounded"
-            />
-            <div className="flex items-center gap-2">
-              <Lock className="h-4 w-4 text-pink-500" />
-              <span className="text-sm">Album privé (protégé par code PIN)</span>
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="bg-white dark:bg-neutral-900">
+        <div className="mx-auto w-full max-w-md">
+          <DrawerHeader>
+            <DrawerTitle>Nouvel Album</DrawerTitle>
+            <DrawerDescription>Crée un nouvel album pour tes souvenirs.</DrawerDescription>
+          </DrawerHeader>
+          
+          <div className="p-4 space-y-4">
+            <div>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Titre de l'album"
+                className="w-full rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 text-lg font-medium"
+                autoFocus
+              />
             </div>
-          </label>
-        </div>
 
-        <div className="flex justify-end gap-2 mt-6">
-          <Button onClick={onClose} variant="outline" className="rounded-2xl">
-            Annuler
-          </Button>
-          <Button
-            onClick={handleCreate}
-            disabled={!title.trim() || loading}
-            className="rounded-2xl"
-          >
-            {loading ? 'Création...' : 'Créer'}
-          </Button>
+            <div>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Description (optionnel)"
+                className="w-full rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 resize-none h-24"
+              />
+            </div>
+
+            <div className="flex items-center justify-between py-2">
+              <div className="flex items-center gap-2">
+                <Lock className="h-4 w-4 text-neutral-500" />
+                <span className="font-medium">Album Privé</span>
+              </div>
+              <Switch checked={isPrivate} onCheckedChange={setIsPrivate} />
+            </div>
+          </div>
+
+          <DrawerFooter>
+            <Button 
+              onClick={handleCreate} 
+              disabled={!title.trim() || loading}
+              className="w-full rounded-xl h-12 text-base"
+            >
+              {loading ? 'Création...' : 'Créer l\'album'}
+            </Button>
+            <DrawerClose asChild>
+              <Button variant="outline" className="w-full rounded-xl h-12 text-base">Annuler</Button>
+            </DrawerClose>
+          </DrawerFooter>
         </div>
-      </div>
-    </div>
+      </DrawerContent>
+    </Drawer>
   )
 }

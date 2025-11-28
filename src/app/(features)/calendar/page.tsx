@@ -14,6 +14,16 @@ import {
     Pencil,
     Trash2,
 } from "lucide-react";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerClose,
+} from "@/components/ui/drawer";
+import { Switch } from "@/components/ui/switch";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 
@@ -42,10 +52,12 @@ export default function CalendarPage() {
 
   // form state
   const [title, setTitle] = useState("");
-  const [start, setStart] = useState<string>("");
-  const [end, setEnd] = useState<string>("");
+  const [date, setDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  const [startTime, setStartTime] = useState<string>("");
+  const [endTime, setEndTime] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
-  const [allDay, setAllDay] = useState<boolean>(false);
+  const [isSingleDay, setIsSingleDay] = useState<boolean>(true);
   const [formCollapsed, setFormCollapsed] = useState<boolean>(false);
   const params = useSearchParams();
 
@@ -137,15 +149,37 @@ export default function CalendarPage() {
 
   async function addEvent() {
     const t = title.trim();
-    if (!t || !start || !me || !coupleId) return;
-    let starts_at = new Date(start).toISOString();
-    let ends_at: string | null = end ? new Date(end).toISOString() : null;
-    if (allDay) {
-      const d = new Date(start);
-      d.setHours(0, 0, 0, 0);
-      starts_at = d.toISOString();
-      ends_at = null;
+    if (!t || !date || !startTime || !me || !coupleId) return;
+    
+    let starts_at: string;
+    let ends_at: string | null = null;
+
+    if (isSingleDay) {
+      // Single day: starts at date+startTime, ends at date+endTime (if provided)
+      starts_at = new Date(`${date}T${startTime}`).toISOString();
+      if (endTime) {
+        ends_at = new Date(`${date}T${endTime}`).toISOString();
+      }
+    } else {
+      // Multi day: starts at date+startTime, ends at endDate+endTime
+      if (!endDate) return; // required for multi-day
+      starts_at = new Date(`${date}T${startTime}`).toISOString();
+      if (endTime) {
+        ends_at = new Date(`${endDate}T${endTime}`).toISOString();
+      } else {
+        // if no end time, maybe end of day? or just date?
+        // let's assume end of day or same time as start if not specified?
+        // User asked for "heure de début et heure de fin", so let's assume they provide it.
+        // If not, we can default to null or same time.
+        // Let's require endTime for multi-day to be safe, or default to 23:59?
+        // For now, if no endTime, we just use the date part? No, ISO needs time.
+        // Let's default to 23:59:59 if no time provided for end date?
+        // Or better: require it.
+        // But to avoid blocking, let's default to same time as start if missing.
+        ends_at = new Date(`${endDate}T${startTime}`).toISOString();
+      }
     }
+
     if (!navigator.onLine) {
       const { enqueueOutbox } = await import('@/lib/outbox');
       await enqueueOutbox('event', {
@@ -155,10 +189,10 @@ export default function CalendarPage() {
         notes: notes.trim() || null,
         author_id: me,
         couple_id: coupleId,
-        all_day: allDay,
+        all_day: false, // We are using specific times now
       });
       console.log('[offline] event queued');
-      setTitle(""); setStart(""); setEnd(""); setNotes("");
+      setTitle(""); setDate(""); setEndDate(""); setStartTime(""); setEndTime(""); setNotes("");
       return;
     }
 
@@ -171,15 +205,10 @@ export default function CalendarPage() {
         ends_at,
         notes: notes.trim() || null,
         couple_id: coupleId,
-        all_day: allDay,
+        all_day: false,
       })
       
-      // Optimistic update handled by realtime subscription usually, but we can add it manually if needed.
-      // The existing code relies on realtime or refetch?
-      // Actually the existing code didn't update state manually for insert, it relied on realtime subscription (lines 89-118).
-      // So we just need to call the action.
-      
-      setTitle(""); setStart(""); setEnd(""); setNotes(""); setAllDay(false);
+      setTitle(""); setDate(""); setEndDate(""); setStartTime(""); setEndTime(""); setNotes(""); setIsSingleDay(true);
     } catch (e: any) {
       console.error("Error creating event:", e)
       alert(e.message)
@@ -301,31 +330,92 @@ export default function CalendarPage() {
           </div>
           {!formCollapsed && (
             <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="flex flex-col gap-3">
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Titre"
               className="rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/10"
             />
-            <label className="inline-flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={allDay} onChange={(e) => setAllDay(e.target.checked)} />
-              Évènement sur une journée
-            </label>
-            <input
-              type="datetime-local"
-              value={start}
-              onChange={(e) => setStart(e.target.value)}
-              placeholder="Début"
-              className="rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/10"
-            />
-            <input
-              type="datetime-local"
-              value={end}
-              onChange={(e) => setEnd(e.target.value)}
-              placeholder="Fin (optionnel)"
-              className="rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/10"
-            />
+            
+            <div className="flex items-center justify-between py-1">
+              <label className="text-sm font-medium">Évènement sur une journée</label>
+              <Switch checked={isSingleDay} onCheckedChange={setIsSingleDay} />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              {isSingleDay ? (
+                <>
+                  {/* Single Day Mode */}
+                  <div className="flex items-center gap-2 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 px-3 py-2">
+                    <span className="text-sm opacity-70 w-16">Date</span>
+                    <input
+                      type="date"
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                      className="flex-1 bg-transparent outline-none text-right"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 px-3 py-2">
+                    <span className="text-sm opacity-70 w-16">Début</span>
+                    <input
+                      type="time"
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
+                      className="flex-1 bg-transparent outline-none text-right"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 px-3 py-2">
+                    <span className="text-sm opacity-70 w-16">Fin</span>
+                    <input
+                      type="time"
+                      value={endTime}
+                      onChange={(e) => setEndTime(e.target.value)}
+                      className="flex-1 bg-transparent outline-none text-right"
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Multi Day Mode */}
+                  <div className="flex items-center gap-2 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 px-3 py-2">
+                    <span className="text-sm opacity-70 w-20">Début</span>
+                    <div className="flex flex-1 gap-2 justify-end">
+                      <input
+                        type="date"
+                        value={date}
+                        onChange={(e) => setDate(e.target.value)}
+                        className="bg-transparent outline-none text-right w-[130px]"
+                      />
+                      <input
+                        type="time"
+                        value={startTime}
+                        onChange={(e) => setStartTime(e.target.value)}
+                        className="bg-transparent outline-none text-right w-[80px]"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 px-3 py-2">
+                    <span className="text-sm opacity-70 w-20">Fin</span>
+                    <div className="flex flex-1 gap-2 justify-end">
+                      <input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="bg-transparent outline-none text-right w-[130px]"
+                      />
+                      <input
+                        type="time"
+                        value={endTime}
+                        onChange={(e) => setEndTime(e.target.value)}
+                        className="bg-transparent outline-none text-right w-[80px]"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
             <input
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -336,8 +426,8 @@ export default function CalendarPage() {
           <div className="mt-3">
             <button
               onClick={addEvent}
-              className="inline-flex items-center gap-2 rounded-xl border border-black/10 dark:border-white/10 bg-black text-white dark:bg-white dark:text-black px-3 py-2 font-medium disabled:opacity-50 active:scale-95 transition"
-              disabled={!title.trim() || !start}
+              className="inline-flex items-center gap-2 rounded-xl border border-black/10 dark:border-white/10 bg-black text-white dark:bg-white dark:text-black px-3 py-2 font-medium disabled:opacity-50 active:scale-95 transition w-full justify-center"
+              disabled={!title.trim() || !date || !startTime || (!isSingleDay && !endDate)}
             >
               Ajouter
             </button>
@@ -350,7 +440,7 @@ export default function CalendarPage() {
       {/* === LISTE (scroll dans une box) === */}
       <section
         className={`
-          flex-1 mt-8 pb-8
+          flex-1 mt-4 pb-8
         `}
       >
         <div className="space-y-4">
@@ -404,120 +494,10 @@ export default function CalendarPage() {
                         data-menu-trigger={ev.id}
                         className="rounded-lg px-2 py-1 hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition"
                         title="Actions événement"
-                        onClick={() => setOpenMenuId(prev => prev === ev.id ? null : ev.id)}
-                        aria-haspopup="menu"
-                        aria-expanded={openMenuId === ev.id}
+                        onClick={() => setOpenMenuId(ev.id)}
                       >
                         <MoreVertical className="h-4 w-4" />
                       </button>
-                      {openMenuId === ev.id && (
-                        <div
-                          role="menu"
-                          className="absolute min-w-[180px] rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900 shadow-lg py-1"
-                          style={{
-                            zIndex: 9999,
-                          }}
-                          ref={(el) => {
-                            if (!el) return;
-                            const btn = document.querySelector(`[data-menu-trigger="${ev.id}"]`);
-                            if (!btn) return;
-                            const parent = btn.closest('[data-calendar-menu]') as HTMLElement | null;
-                            const rect = btn.getBoundingClientRect();
-                            const parentRect = parent ? parent.getBoundingClientRect() : ({
-                              left: 0,
-                              top: 0,
-                              width: window.innerWidth,
-                              height: window.innerHeight,
-                            } as DOMRect);
-
-                            const menuRect = el.getBoundingClientRect();
-                            const naturalMenuW = Math.max(menuRect.width || 180, 180);
-                            const naturalMenuH = Math.max(menuRect.height || 120, 80);
-                            const padding = 8;
-
-                            // available width inside parent (fallback to viewport)
-                            const availW = parentRect.width || window.innerWidth;
-
-                            // If the container is narrow (mobile), make the menu fit the container with side padding
-                            if (availW <= naturalMenuW + padding * 2 || availW < 320) {
-                              const w = Math.max(140, availW - padding * 2);
-                              el.style.width = `${w}px`;
-                              // position full-width-ish under the button, but keep some side padding
-                              const left = Math.max(padding, rect.left - (parentRect.left || 0) - padding);
-                              let top = rect.bottom - (parentRect.top || 0) + 8;
-                              const menuH = naturalMenuH;
-                              if (top + menuH > (parentRect.height || window.innerHeight) - padding) {
-                                top = rect.top - (parentRect.top || 0) - menuH - 8;
-                                top = Math.max(padding, Math.min(top, (parentRect.height || window.innerHeight) - menuH - padding));
-                              }
-                              el.style.left = `${left}px`;
-                              el.style.top = `${top}px`;
-                              return;
-                            }
-
-                            // Prefer to display the menu below and left-aligned to the button
-                            // so it doesn't overflow the right edge on small screens.
-                            let left = rect.left - (parentRect.left || 0);
-
-                            // If the natural menu width is wider than available, shrink it to fit
-                            const availWidth = (parentRect.width || window.innerWidth) - padding * 2;
-                            const menuW = Math.min(naturalMenuW, Math.max(140, availWidth));
-                            el.style.width = `${menuW}px`;
-
-                            // clamp inside parent/viewport horizontally
-                            const minLeft = padding;
-                            const maxLeft = Math.max((parentRect.width || window.innerWidth) - menuW - padding, minLeft);
-                            left = Math.min(Math.max(left, minLeft), maxLeft);
-
-                            // prefer below the button
-                            let top = rect.bottom - (parentRect.top || 0) + 6;
-                            if (top + naturalMenuH > (parentRect.height || window.innerHeight) - padding) {
-                              top = rect.top - (parentRect.top || 0) - naturalMenuH - 6;
-                              top = Math.max(padding, Math.min(top, (parentRect.height || window.innerHeight) - naturalMenuH - padding));
-                            }
-
-                            el.style.left = `${left}px`;
-                            el.style.top = `${top}px`;
-                          }}
-                        >
-                          <button
-                            type="button"
-                            role="menuitem"
-                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-black/5 dark:hover:bg-white/10"
-                            onClick={() => {
-                              setOpenMenuId(null);
-                              setEditing(ev);
-                            }}
-                          >
-                            <Pencil className="h-4 w-4" />
-                            Modifier
-                          </button>
-                          <button
-                            type="button"
-                            role="menuitem"
-                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-black/5 dark:hover:bg-white/10"
-                            onClick={() => {
-                              setOpenMenuId(null);
-                              handleAddToAppleCalendar(ev);
-                            }}
-                          >
-                            <Apple className="h-4 w-4" />
-                            Ajouter au calendrier Apple
-                          </button>
-                          <button
-                            type="button"
-                            role="menuitem"
-                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-black/5 dark:hover:bg-white/10 text-red-600 dark:text-red-400"
-                            onClick={() => {
-                              setOpenMenuId(null);
-                              deleteEvent(ev.id);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            Supprimer
-                          </button>
-                        </div>
-                      )}
                     </div>
                   </li>
                 ))}
@@ -566,6 +546,78 @@ export default function CalendarPage() {
           />
         </div>
       )}
+      <Drawer open={!!openMenuId} onOpenChange={(open) => !open && setOpenMenuId(null)}>
+        <DrawerContent className="bg-transparent border-none shadow-none p-4 pb-8">
+          <div className="flex flex-col gap-4 max-w-md mx-auto w-full">
+            {/* Main Actions Group */}
+            <div className="overflow-hidden rounded-2xl bg-white/90 dark:bg-neutral-800/90 backdrop-blur-md">
+              <div className="px-4 py-3 text-center border-b border-black/5 dark:border-white/5">
+                <DrawerTitle className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
+                  Options de l'événement
+                </DrawerTitle>
+                {/* <DrawerDescription className="sr-only">Options</DrawerDescription> */}
+              </div>
+              
+              <div className="flex flex-col">
+                <button
+                  className="flex w-full items-center justify-between px-4 py-3.5 text-[17px] text-black dark:text-white active:bg-black/5 dark:active:bg-white/10 transition border-b border-black/5 dark:border-white/5 last:border-0"
+                  onClick={() => {
+                    const ev = items.find(i => i.id === openMenuId);
+                    if (ev) {
+                      setOpenMenuId(null);
+                      setEditing(ev);
+                    }
+                  }}
+                >
+                  <span className="flex items-center gap-3">
+                    <Pencil className="h-5 w-5 text-blue-500" />
+                    Modifier
+                  </span>
+                </button>
+                
+                <button
+                  className="flex w-full items-center justify-between px-4 py-3.5 text-[17px] text-black dark:text-white active:bg-black/5 dark:active:bg-white/10 transition border-b border-black/5 dark:border-white/5 last:border-0"
+                  onClick={() => {
+                    const ev = items.find(i => i.id === openMenuId);
+                    if (ev) {
+                      setOpenMenuId(null);
+                      handleAddToAppleCalendar(ev);
+                    }
+                  }}
+                >
+                  <span className="flex items-center gap-3">
+                    <Apple className="h-5 w-5 text-black dark:text-white" />
+                    Ajouter au calendrier Apple
+                  </span>
+                </button>
+
+                <button
+                  className="flex w-full items-center justify-between px-4 py-3.5 text-[17px] text-red-600 dark:text-red-500 active:bg-black/5 dark:active:bg-white/10 transition"
+                  onClick={() => {
+                    const ev = items.find(i => i.id === openMenuId);
+                    if (ev) {
+                      setOpenMenuId(null);
+                      deleteEvent(ev.id);
+                    }
+                  }}
+                >
+                  <span className="flex items-center gap-3">
+                    <Trash2 className="h-5 w-5" />
+                    Supprimer
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {/* Cancel Button */}
+            <DrawerClose asChild>
+              <button className="w-full rounded-2xl bg-white dark:bg-neutral-800 py-3.5 text-[17px] font-semibold text-blue-600 dark:text-blue-500 active:scale-[0.98] transition shadow-sm">
+                Annuler
+              </button>
+            </DrawerClose>
+          </div>
+        </DrawerContent>
+      </Drawer>
     </main>
     </>
   );
