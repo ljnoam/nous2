@@ -14,7 +14,12 @@ export default function OneSignalInit({ userId }: { userId?: string }) {
 
         if (userId) {
           // Check if already logged in as this user to avoid 409s or redundant calls
-          // Note: OneSignal SDK doesn't always expose externalId synchronously, but we can try/catch
+          const currentId = OneSignal.User.externalId;
+          if (currentId === userId) {
+            // Already logged in as this user
+            return;
+          }
+
           try {
              await OneSignal.login(userId);
           } catch (e: any) {
@@ -22,7 +27,7 @@ export default function OneSignalInit({ userId }: { userId?: string }) {
              // If 409, it usually means conflict. We might need to logout first?
              // But usually login handles switching. 
              // If we are stuck, we can try logging out and logging in again.
-             if (e?.statusCode === 409) {
+             if (e?.statusCode === 409 || e?.status === 409) {
                  console.log('Attempting to resolve OneSignal conflict via logout...');
                  await OneSignal.logout();
                  await OneSignal.login(userId);

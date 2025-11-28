@@ -31,11 +31,26 @@ async function getSupabase() {
 import { createClient } from '@supabase/supabase-js'
 
 async function getPartnerId(supabase: any, userId: string, coupleId: string) {
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  console.log('[getPartnerId] Service Key present:', !!serviceKey)
+  console.log('[getPartnerId] Supabase URL present:', !!process.env.NEXT_PUBLIC_SUPABASE_URL)
+  
+  if (!serviceKey) {
+    console.warn('SUPABASE_SERVICE_ROLE_KEY is missing. Cannot bypass RLS for partner lookup.')
+    return null
+  }
+
   // Use Service Role to bypass RLS and ensure we can see the partner
-  const adminAuthClient = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  let adminAuthClient
+  try {
+    adminAuthClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      serviceKey
+    )
+  } catch (e) {
+    console.error('[getPartnerId] Failed to create admin client:', e)
+    return null
+  }
 
   const { data } = await adminAuthClient
     .from('couple_members')
@@ -48,10 +63,27 @@ async function getPartnerId(supabase: any, userId: string, coupleId: string) {
 }
 
 async function shouldNotify(supabase: any, userId: string, type: 'notify_notes' | 'notify_calendar' | 'notify_gallery') {
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!serviceKey) {
+    console.warn('SUPABASE_SERVICE_ROLE_KEY is missing. Cannot bypass RLS for preferences.')
+    // Fallback to regular client (might fail if RLS prevents reading partner prefs)
+    // But actually, if we can't read prefs, we should probably assume TRUE or FALSE?
+    // Let's try with the passed 'supabase' client which is user-scoped.
+    // If RLS allows reading partner's prefs (e.g. "couple members can view each other's prefs"), this works.
+    // If not, it returns null/error.
+    const { data } = await supabase
+        .from('user_prefs')
+        .select(type)
+        .eq('user_id', userId)
+        .maybeSingle()
+    if (!data) return true
+    return (data as any)[type] !== false
+  }
+
   // Also use admin client for prefs to ensure we can read partner's prefs
   const adminAuthClient = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    serviceKey
   )
 
   const { data } = await adminAuthClient
