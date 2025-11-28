@@ -28,18 +28,33 @@ async function getSupabase() {
   )
 }
 
+import { createClient } from '@supabase/supabase-js'
+
 async function getPartnerId(supabase: any, userId: string, coupleId: string) {
-  const { data } = await supabase
+  // Use Service Role to bypass RLS and ensure we can see the partner
+  const adminAuthClient = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  const { data } = await adminAuthClient
     .from('couple_members')
     .select('user_id')
     .eq('couple_id', coupleId)
     .neq('user_id', userId)
     .maybeSingle()
+  
   return data?.user_id
 }
 
 async function shouldNotify(supabase: any, userId: string, type: 'notify_notes' | 'notify_calendar' | 'notify_gallery') {
-  const { data } = await supabase
+  // Also use admin client for prefs to ensure we can read partner's prefs
+  const adminAuthClient = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  const { data } = await adminAuthClient
     .from('user_prefs')
     .select(type)
     .eq('user_id', userId)
@@ -47,7 +62,7 @@ async function shouldNotify(supabase: any, userId: string, type: 'notify_notes' 
   
   // Default to true if no prefs found or column is null (as per requirement "défaut true")
   if (!data) return true
-  return data[type] !== false
+  return (data as any)[type] !== false
 }
 
 export async function createNote(content: string, coupleId: string) {
