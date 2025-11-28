@@ -10,18 +10,28 @@ export default function OneSignalInit({ userId }: { userId?: string }) {
         await OneSignal.init({
           appId: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID || '',
           allowLocalhostAsSecureOrigin: true,
-          // Silent init: no autoPrompt, no slidedown configuration here.
-          // We trigger it manually via OneSignal.Slidedown.promptPush()
         });
 
         if (userId) {
-          await OneSignal.login(userId);
+          // Check if already logged in as this user to avoid 409s or redundant calls
+          // Note: OneSignal SDK doesn't always expose externalId synchronously, but we can try/catch
+          try {
+             await OneSignal.login(userId);
+          } catch (e: any) {
+             console.warn('OneSignal login error:', e);
+             // If 409, it usually means conflict. We might need to logout first?
+             // But usually login handles switching. 
+             // If we are stuck, we can try logging out and logging in again.
+             if (e?.statusCode === 409) {
+                 console.log('Attempting to resolve OneSignal conflict via logout...');
+                 await OneSignal.logout();
+                 await OneSignal.login(userId);
+             }
+          }
         }
         
       } catch (error: any) {
         console.error('OneSignal init error:', error);
-        // Suppress the specific "Can only be used on" error to avoid crashing the app flow, 
-        // but log it clearly so the user knows to update their dashboard.
         if (error?.message?.includes('Can only be used on')) {
            console.warn('OneSignal Configuration Error: Please add "http://localhost:3000" to your OneSignal App Settings under "Site URL" or "Allowed Origins".');
         }

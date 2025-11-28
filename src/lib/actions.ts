@@ -71,13 +71,18 @@ export async function createNote(content: string, coupleId: string) {
   // 2. Notify Partner
   try {
     const partnerId = await getPartnerId(supabase, user.id, coupleId)
+    console.log('[createNote] Partner ID:', partnerId)
+    
     if (partnerId) {
       const notify = await shouldNotify(supabase, partnerId, 'notify_notes')
+      console.log('[createNote] Notify preference:', notify)
+      
       if (notify) {
         // Fetch user name for the message
         const { data: profile } = await supabase.from('profiles').select('first_name').eq('id', user.id).single()
         const name = profile?.first_name || 'Ton partenaire'
         
+        console.log('[createNote] Sending notification to:', partnerId)
         await sendNotification({
           type: 'note',
           targetUserId: partnerId,
@@ -86,9 +91,11 @@ export async function createNote(content: string, coupleId: string) {
           data: { noteId: data.id, coupleId }
         })
       }
+    } else {
+        console.log('[createNote] No partner found for couple:', coupleId)
     }
   } catch (e) {
-    console.error('Error sending notification:', e)
+    console.error('[createNote] Error sending notification:', e)
   }
 
   return data
@@ -114,10 +121,16 @@ export async function createEvent(eventData: any) {
   // 2. Notify Partner
   try {
     const partnerId = await getPartnerId(supabase, user.id, eventData.couple_id)
+    console.log('[createEvent] Partner ID:', partnerId)
+
     if (partnerId) {
       const notify = await shouldNotify(supabase, partnerId, 'notify_calendar')
+      console.log('[createEvent] Notify preference:', notify)
+
       if (notify) {
         const dateStr = new Date(eventData.starts_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
+        console.log('[createEvent] Sending notification to:', partnerId)
+        
         await sendNotification({
           type: 'event',
           targetUserId: partnerId,
@@ -126,9 +139,11 @@ export async function createEvent(eventData: any) {
           data: { eventId: data.id, coupleId: eventData.couple_id }
         })
       }
+    } else {
+        console.log('[createEvent] No partner found')
     }
   } catch (e) {
-    console.error('Error sending notification:', e)
+    console.error('[createEvent] Error sending notification:', e)
   }
 
   return data
@@ -158,12 +173,17 @@ export async function uploadPhoto(photoData: any) {
   // 2. Notify Partner
   try {
     const partnerId = await getPartnerId(supabase, user.id, photoData.couple_id)
+    console.log('[uploadPhoto] Partner ID:', partnerId)
+
     if (partnerId) {
       const notify = await shouldNotify(supabase, partnerId, 'notify_gallery')
+      console.log('[uploadPhoto] Notify preference:', notify)
+
       if (notify) {
         const { data: profile } = await supabase.from('profiles').select('first_name').eq('id', user.id).single()
         const name = profile?.first_name || 'Ton partenaire'
 
+        console.log('[uploadPhoto] Sending notification to:', partnerId)
         await sendNotification({
           type: 'photo',
           targetUserId: partnerId,
@@ -172,9 +192,11 @@ export async function uploadPhoto(photoData: any) {
           data: { photoId: data.id, coupleId: photoData.couple_id }
         })
       }
+    } else {
+        console.log('[uploadPhoto] No partner found')
     }
   } catch (e) {
-    console.error('Error sending notification:', e)
+    console.error('[uploadPhoto] Error sending notification:', e)
   }
 
   return data
