@@ -8,7 +8,7 @@ const app_key_provider = {
 
 const configuration = OneSignal.createConfiguration({
     authMethods: {
-        app_key: {
+        rest_api_key: {
             tokenProvider: app_key_provider
         }
     }
