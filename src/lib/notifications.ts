@@ -46,6 +46,7 @@ export async function sendNotification({ type, targetUserId, title, message, dat
     notification.include_aliases = {
         external_id: [targetUserId]
     };
+    notification.target_channel = "push";
     notification.headings = {
       en: title,
       fr: title,
