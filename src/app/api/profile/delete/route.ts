@@ -29,6 +29,27 @@ export async function POST() {
 
   const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceKey);
 
+  // 1. Find the couple
+  const { data: member } = await admin
+    .from('couple_members')
+    .select('couple_id')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (member?.couple_id) {
+    // 2. Delete the couple (this should cascade to members, notes, photos, albums, events)
+    const { error: coupleDelErr } = await admin
+      .from('couples')
+      .delete()
+      .eq('id', member.couple_id);
+    
+    if (coupleDelErr) {
+      console.error("Error deleting couple:", coupleDelErr);
+      // If couple deletion fails, we return error to avoid partial state or blocking
+      return NextResponse.json({ error: "Error deleting couple: " + coupleDelErr.message }, { status: 500 });
+    }
+  }
+
   // Best-effort: delete avatar folder first
   try {
     const { data: files } = await admin.storage.from('avatars').list(user.id, { limit: 100, offset: 0, sortBy: { column: 'name', order: 'asc' } });
