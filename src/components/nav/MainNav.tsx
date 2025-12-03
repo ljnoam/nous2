@@ -4,7 +4,8 @@ import {
     Calendar as CalendarIcon,
     Home,
     Image,
-    NotebookPen
+    NotebookPen,
+    ListTodo
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -21,6 +22,7 @@ type Item = {
 const NAV_ITEMS: Item[] = [
   { href: '/home',     label: 'Home',   icon: Home },
   { href: '/notes',    label: 'Notes',  icon: NotebookPen },
+  { href: '/bucket',   label: 'Listes', icon: ListTodo },
   { href: '/albums',   label: 'Albums', icon: Image },
   { href: '/calendar', label: 'Agenda', icon: CalendarIcon },
   // Profil (avatar custom)

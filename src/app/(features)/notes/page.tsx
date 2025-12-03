@@ -5,7 +5,16 @@ import NoteCard from "@/components/notes/NoteCard"
 import BlurText from "@/components/ui/BlurText"
 import { Button } from "@/components/ui/button"
 import { supabase } from "@/lib/supabase/client"
-import { Send } from "lucide-react"
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerClose,
+} from "@/components/ui/drawer"
+import { NotebookPen, Plus } from "lucide-react"
 import { AnimatePresence } from "motion/react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -26,6 +35,7 @@ export default function NotesPage() {
   const [loading, setLoading] = useState(true)
   const [me, setMe] = useState<string | null>(null)
   const [coupleId, setCoupleId] = useState<string | null>(null)
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
   useEffect(() => {
     init()
@@ -94,8 +104,7 @@ export default function NotesPage() {
     }
   }
 
-  async function addNote(e: React.FormEvent) {
-    e.preventDefault()
+  async function addNote() {
     if (!newNote.trim() || !me || !coupleId) return
 
     setIsSubmitting(true)
@@ -109,6 +118,7 @@ export default function NotesPage() {
         const newNoteObj = { ...data, author_name: "Moi" }
         setNotes([newNoteObj, ...notes])
         setNewNote("")
+        setIsDrawerOpen(false)
       }
     } catch (e) {
       console.error("Error adding note:", e)
@@ -132,84 +142,119 @@ export default function NotesPage() {
     }
   }
 
+  const containerStyle: React.CSSProperties = {
+    "--gap": "8px",
+  } as any;
+
   return (
     <>
       <HeartBackground />
-      <div className="relative z-10 min-h-screen pt-8 pb-28 px-4 overflow-x-hidden bg-neutral-50 dark:bg-neutral-950 transition-colors duration-500">
-        <div className="max-w-5xl mx-auto space-y-8">
-        <header className="text-center space-y-2 mb-8">
-          <BlurText
-            text="Mots doux"
-            className="text-4xl font-bold tracking-tight text-neutral-900 dark:text-white"
-            delay={150}
-            animateBy="chars"
-            direction="top"
-          />
-          <p className="text-neutral-500 dark:text-neutral-400">
-            Le mur de vos petites attentions
-          </p>
-        </header>
-
-        {/* Input Area - Sticky or just at top */}
-        <div className="max-w-2xl mx-auto bg-white dark:bg-neutral-900 rounded-3xl p-4 shadow-sm border border-neutral-100 dark:border-neutral-800 mb-10 transition-colors duration-300">
-          <form onSubmit={addNote} className="relative">
-            <textarea
-              value={newNote}
-              onChange={(e) => setNewNote(e.target.value)}
-              placeholder="Écris quelque chose de mignon..."
-              className="w-full h-24 bg-transparent resize-none outline-none text-lg placeholder:text-neutral-400 dark:placeholder:text-neutral-600 dark:text-white p-2"
-            />
-            <div className="flex justify-between items-center mt-2 px-2">
-              <div className="flex gap-2">
-                {["Je t'aime ❤️", "Merci ✨", "Tu me manques 🌙"].map(preset => (
-                  <button
-                    key={preset}
-                    type="button"
-                    onClick={() => setNewNote(preset)}
-                    className="text-xs px-3 py-1.5 rounded-full bg-pink-50 text-pink-600 hover:bg-pink-100 dark:bg-pink-900/20 dark:text-pink-400 dark:hover:bg-pink-900/40 transition-colors"
-                  >
-                    {preset}
-                  </button>
-                ))}
+      <main 
+        style={containerStyle}
+        className="relative z-10 h-[100dvh] overflow-y-auto pb-28 px-2 pt-[calc(env(safe-area-inset-top)+var(--gap))] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']"
+      >
+        <div className="max-w-6xl mx-auto space-y-6">
+          
+          {/* Floating Header */}
+          <div className="sticky top-[calc(env(safe-area-inset-top)+var(--gap))] z-20">
+            <div className="flex items-center justify-between rounded-2xl border border-black/10 dark:border-white/10 bg-white/80 dark:bg-neutral-900/70 backdrop-blur-md shadow-lg p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-pink-500/10 rounded-xl text-pink-600 dark:text-pink-400">
+                  <NotebookPen className="h-5 w-5" />
+                </div>
+                <h1 className="text-xl font-bold tracking-tight">Mots doux</h1>
               </div>
-              <Button
-                type="submit"
-                disabled={isSubmitting || !newNote.trim()}
-                className="rounded-full px-6 bg-pink-600 hover:bg-pink-700 text-white dark:bg-pink-700 dark:hover:bg-pink-600"
+              
+              <button
+                onClick={() => setIsDrawerOpen(true)}
+                className="p-2 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 active:scale-95 transition"
               >
-                {isSubmitting ? "..." : <Send className="w-4 h-4" />}
-              </Button>
+                <Plus className="h-5 w-5" />
+              </button>
             </div>
-          </form>
+          </div>
+
+          {/* Masonry Grid */}
+          {loading ? (
+            <div className="flex items-center justify-center py-20 text-neutral-400">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500" />
+            </div>
+          ) : notes.length > 0 ? (
+            <div className="columns-1 sm:columns-2 md:columns-3 gap-4 space-y-4">
+              <AnimatePresence mode="popLayout">
+                {notes.map((note, i) => (
+                  <NoteCard
+                    key={note.id}
+                    note={note}
+                    index={i}
+                    onDelete={deleteNote}
+                    isAuthor={note.author_id === me}
+                  />
+                ))}
+              </AnimatePresence>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 opacity-50">
+              <div className="text-4xl mb-2">💌</div>
+              <p>Aucun mot doux pour le moment</p>
+              <button 
+                onClick={() => setIsDrawerOpen(true)}
+                className="mt-4 text-sm text-pink-500 hover:underline"
+              >
+                Écrire le premier mot
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Masonry Grid */}
-        {loading ? (
-          <div className="flex items-center justify-center py-20 text-neutral-400">
-            Chargement des mots doux...
-          </div>
-        ) : notes.length > 0 ? (
-          <div className="columns-1 sm:columns-2 md:columns-3 gap-4 space-y-4">
-            <AnimatePresence mode="popLayout">
-              {notes.map((note, i) => (
-                <NoteCard
-                  key={note.id}
-                  note={note}
-                  index={i}
-                  onDelete={deleteNote}
-                  isAuthor={note.author_id === me}
+        {/* Create Note Drawer */}
+        <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+          <DrawerContent className="bg-white dark:bg-neutral-900">
+            <div className="mx-auto w-full max-w-md">
+              <DrawerHeader>
+                <DrawerTitle>Nouveau mot doux</DrawerTitle>
+                <DrawerDescription>Écris un petit mot pour ton partenaire.</DrawerDescription>
+              </DrawerHeader>
+              
+              <div className="p-4 space-y-4">
+                <textarea
+                  value={newNote}
+                  onChange={(e) => setNewNote(e.target.value)}
+                  placeholder="Écris quelque chose de mignon..."
+                  className="w-full rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-4 py-3 outline-none focus:ring-2 focus:ring-pink-500 resize-none h-32 text-lg"
+                  autoFocus
                 />
-              ))}
-            </AnimatePresence>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-20 text-neutral-400 space-y-4">
-            <p>Aucun mot doux pour le moment.</p>
-            <p className="text-sm">Sois le premier à épingler un mot sur le mur !</p>
-          </div>
-        )}
-        </div>
-      </div>
+
+                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                  {["Je t'aime ❤️", "Merci ✨", "Tu me manques 🌙", "Bonne journée ☀️"].map(preset => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setNewNote(preset)}
+                      className="flex-shrink-0 text-xs px-3 py-1.5 rounded-full bg-pink-50 text-pink-600 hover:bg-pink-100 dark:bg-pink-900/20 dark:text-pink-400 dark:hover:bg-pink-900/40 transition-colors"
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <DrawerFooter>
+                <Button 
+                  onClick={addNote} 
+                  disabled={!newNote.trim() || isSubmitting}
+                  className="w-full rounded-xl h-12 text-base bg-pink-600 hover:bg-pink-700 text-white"
+                >
+                  {isSubmitting ? "Envoi..." : "Envoyer ❤️"}
+                </Button>
+                <DrawerClose asChild>
+                  <Button variant="outline" className="w-full rounded-xl h-12 text-base">Annuler</Button>
+                </DrawerClose>
+              </DrawerFooter>
+            </div>
+          </DrawerContent>
+        </Drawer>
+      </main>
     </>
   )
 }

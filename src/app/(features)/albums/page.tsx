@@ -110,7 +110,7 @@ export default function AlbumsPage() {
   const privateAlbums = albums.filter(a => a.is_private)
 
   const containerStyle: CSSProperties = {
-    "--gap": "16px",
+    "--gap": "8px",
   } as any;
 
   return (
@@ -119,7 +119,7 @@ export default function AlbumsPage() {
       
       <main 
         style={containerStyle}
-        className="relative z-10 min-h-screen pb-28 px-4 pt-[calc(env(safe-area-inset-top)+var(--gap))]"
+        className="relative z-10 min-h-screen pb-28 px-2 pt-[calc(env(safe-area-inset-top)+var(--gap))]"
       >
         <div className="max-w-6xl mx-auto space-y-6">
           

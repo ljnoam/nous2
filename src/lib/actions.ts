@@ -248,3 +248,54 @@ export async function uploadPhoto(photoData: any) {
 
   return data
 }
+
+export async function createBucketItem(itemData: { bucket_id: string, content: string, couple_id: string }) {
+  const supabase = await getSupabase()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  // 1. Create Bucket Item
+  const { data, error } = await supabase
+    .from('bucket_items')
+    .insert({
+      bucket_id: itemData.bucket_id,
+      content: itemData.content,
+      created_by: user.id,
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+
+  // 2. Notify Partner
+  try {
+    const partnerId = await getPartnerId(supabase, user.id, itemData.couple_id)
+    console.log('[createBucketItem] Partner ID:', partnerId)
+
+    if (partnerId) {
+      const notify = await shouldNotify(supabase, partnerId, 'notify_notes')
+      console.log('[createBucketItem] Notify preference:', notify)
+
+      if (notify) {
+        const { data: profile } = await supabase.from('profiles').select('first_name').eq('id', user.id).single()
+        const name = profile?.first_name || 'Ton partenaire'
+
+        const { data: bucket } = await supabase.from('buckets').select('title').eq('id', itemData.bucket_id).single()
+        const bucketTitle = bucket?.title || 'une liste'
+
+        console.log('[createBucketItem] Sending notification to:', partnerId)
+        await sendNotification({
+          type: 'bucket_item',
+          targetUserId: partnerId,
+          title: 'Nouvelle idée 💡',
+          message: `${name} a ajouté "${itemData.content}" dans ${bucketTitle}`,
+          data: { bucketId: itemData.bucket_id, coupleId: itemData.couple_id }
+        })
+      }
+    }
+  } catch (e) {
+    console.error('[createBucketItem] Error sending notification:', e)
+  }
+
+  return data
+}

@@ -12,6 +12,7 @@ import {
     Clock3,
     MoreVertical,
     Pencil,
+    Plus,
     Trash2,
 } from "lucide-react";
 import {
@@ -58,7 +59,7 @@ export default function CalendarPage() {
   const [endTime, setEndTime] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
   const [isSingleDay, setIsSingleDay] = useState<boolean>(true);
-  const [formCollapsed, setFormCollapsed] = useState<boolean>(false);
+  const [formCollapsed, setFormCollapsed] = useState<boolean>(true); // Default to true (closed drawer)
   const params = useSearchParams();
 
   useEffect(() => {
@@ -298,7 +299,7 @@ export default function CalendarPage() {
   }
 
   const containerStyle: CSSProperties = {
-    "--gap": "2px",
+    "--gap": "8px",
   } as any;
 
   return (
@@ -306,136 +307,153 @@ export default function CalendarPage() {
       <HeartBackground />
       <main
         style={containerStyle}
-        className="relative z-10 flex w-full flex-col min-h-[calc(var(--viewport-height)-var(--nav-h))] pb-[calc(env(safe-area-inset-bottom)+var(--gap))]"
-    >
-      {/* === FORMULAIRE STICKY TOP === */}
-      <section
-        className={`
-          sticky top-[calc(env(safe-area-inset-top)+var(--gap))]
-          z-10
-        `}
+        className="relative z-10 flex w-full flex-col min-h-[calc(var(--viewport-height)-var(--nav-h))] pb-[calc(env(safe-area-inset-bottom)+var(--gap))] px-2 pt-[calc(env(safe-area-inset-top)+var(--gap))]"
       >
-        <div className={`relative rounded-2xl border border-black/10 dark:border-white/10 bg-white/80 dark:bg-neutral-900/70 backdrop-blur-md shadow-lg p-4 sm:p-5 ${formCollapsed ? 'py-3' : ''}`}>
-          <button
-            type="button"
-            onClick={() => setFormCollapsed(v => !v)}
-            aria-label={formCollapsed ? 'Réouvrir le formulaire' : 'Réduire le formulaire'}
-            className="absolute top-3 right-3 rounded-lg p-1.5 hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition"
-          >
-            {formCollapsed ? <ChevronDown className="h-5 w-5" /> : <ChevronUp className="h-5 w-5" />}
-          </button>
-          <div className="flex items-center gap-2 mb-3 pr-9">
-            <CalendarPlus className="h-5 w-5" />
-            <h1 className="text-xl font-semibold">Ajouter un événement</h1>
-          </div>
-          {!formCollapsed && (
-            <>
-          <div className="flex flex-col gap-3">
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Titre"
-              className="rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/10"
-            />
+        {/* Floating Header */}
+        <div className="sticky top-[calc(env(safe-area-inset-top)+var(--gap))] z-20 mb-4">
+          <div className="flex items-center justify-between rounded-2xl border border-black/10 dark:border-white/10 bg-white/80 dark:bg-neutral-900/70 backdrop-blur-md shadow-lg p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-500/10 rounded-xl text-purple-600 dark:text-purple-400">
+                <CalendarPlus className="h-5 w-5" />
+              </div>
+              <h1 className="text-xl font-bold tracking-tight">Agenda</h1>
+            </div>
             
-            <div className="flex items-center justify-between py-1">
-              <label className="text-sm font-medium">Évènement sur une journée</label>
-              <Switch checked={isSingleDay} onCheckedChange={setIsSingleDay} />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              {isSingleDay ? (
-                <>
-                  {/* Single Day Mode */}
-                  <div className="flex items-center gap-2 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 px-3 py-2">
-                    <span className="text-sm opacity-70 w-16">Date</span>
-                    <input
-                      type="date"
-                      value={date}
-                      onChange={(e) => setDate(e.target.value)}
-                      className="flex-1 bg-transparent outline-none text-right"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 px-3 py-2">
-                    <span className="text-sm opacity-70 w-16">Début</span>
-                    <input
-                      type="time"
-                      value={startTime}
-                      onChange={(e) => setStartTime(e.target.value)}
-                      className="flex-1 bg-transparent outline-none text-right"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 px-3 py-2">
-                    <span className="text-sm opacity-70 w-16">Fin</span>
-                    <input
-                      type="time"
-                      value={endTime}
-                      onChange={(e) => setEndTime(e.target.value)}
-                      className="flex-1 bg-transparent outline-none text-right"
-                    />
-                  </div>
-                </>
-              ) : (
-                <>
-                  {/* Multi Day Mode */}
-                  <div className="flex items-center gap-2 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 px-3 py-2">
-                    <span className="text-sm opacity-70 w-20">Début</span>
-                    <div className="flex flex-1 gap-2 justify-end">
-                      <input
-                        type="date"
-                        value={date}
-                        onChange={(e) => setDate(e.target.value)}
-                        className="bg-transparent outline-none text-right w-[130px]"
-                      />
-                      <input
-                        type="time"
-                        value={startTime}
-                        onChange={(e) => setStartTime(e.target.value)}
-                        className="bg-transparent outline-none text-right w-[80px]"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 px-3 py-2">
-                    <span className="text-sm opacity-70 w-20">Fin</span>
-                    <div className="flex flex-1 gap-2 justify-end">
-                      <input
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        className="bg-transparent outline-none text-right w-[130px]"
-                      />
-                      <input
-                        type="time"
-                        value={endTime}
-                        onChange={(e) => setEndTime(e.target.value)}
-                        className="bg-transparent outline-none text-right w-[80px]"
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-
-            <input
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Notes (optionnel)"
-              className="rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/10"
-            />
-          </div>
-          <div className="mt-3">
             <button
-              onClick={addEvent}
-              className="inline-flex items-center gap-2 rounded-xl border border-black/10 dark:border-white/10 bg-black text-white dark:bg-white dark:text-black px-3 py-2 font-medium disabled:opacity-50 active:scale-95 transition w-full justify-center"
-              disabled={!title.trim() || !date || !startTime || (!isSingleDay && !endDate)}
+              onClick={() => setFormCollapsed(false)} // Reusing formCollapsed as "isDrawerOpen" inverted, or better: let's change state usage.
+              // Actually, let's use a new state for create drawer to be clean, or reuse formCollapsed logic if we want to minimize changes.
+              // The user said "ne touche à rien niveau backend et logique".
+              // But UI state is frontend logic.
+              // Let's use a new state `isCreateOpen` and map it.
+              className="p-2 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 active:scale-95 transition"
             >
-              Ajouter
+              <Plus className="h-5 w-5" />
             </button>
           </div>
-            </>
-          )}
         </div>
-      </section>
+
+        {/* Create Event Drawer */}
+        <Drawer open={!formCollapsed} onOpenChange={(open) => setFormCollapsed(!open)}>
+          <DrawerContent className="bg-white dark:bg-neutral-900">
+             <div className="mx-auto w-full max-w-md">
+              <DrawerHeader>
+                <DrawerTitle>Nouvel Événement</DrawerTitle>
+                <DrawerDescription>Ajoutez un événement à votre agenda partagé.</DrawerDescription>
+              </DrawerHeader>
+
+              <div className="p-4 space-y-4">
+                <input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Titre"
+                  className="w-full rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-4 py-3 outline-none focus:ring-2 focus:ring-purple-500 text-lg font-medium"
+                  autoFocus
+                />
+                
+                <div className="flex items-center justify-between py-1">
+                  <label className="text-sm font-medium">Toute la journée</label>
+                  <Switch checked={isSingleDay} onCheckedChange={setIsSingleDay} />
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  {isSingleDay ? (
+                    <>
+                      {/* Single Day Mode */}
+                      <div className="flex items-center gap-2 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 px-3 py-2">
+                        <span className="text-sm opacity-70 w-16">Date</span>
+                        <input
+                          type="date"
+                          value={date}
+                          onChange={(e) => setDate(e.target.value)}
+                          className="flex-1 bg-transparent outline-none text-right"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 px-3 py-2">
+                        <span className="text-sm opacity-70 w-16">Début</span>
+                        <input
+                          type="time"
+                          value={startTime}
+                          onChange={(e) => setStartTime(e.target.value)}
+                          className="flex-1 bg-transparent outline-none text-right"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 px-3 py-2">
+                        <span className="text-sm opacity-70 w-16">Fin</span>
+                        <input
+                          type="time"
+                          value={endTime}
+                          onChange={(e) => setEndTime(e.target.value)}
+                          className="flex-1 bg-transparent outline-none text-right"
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* Multi Day Mode */}
+                      <div className="flex items-center gap-2 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 px-3 py-2">
+                        <span className="text-sm opacity-70 w-16">Début</span>
+                        <div className="flex flex-1 gap-2 justify-end">
+                          <input
+                            type="date"
+                            value={date}
+                            onChange={(e) => setDate(e.target.value)}
+                            className="bg-transparent outline-none text-right w-[120px]"
+                          />
+                          <input
+                            type="time"
+                            value={startTime}
+                            onChange={(e) => setStartTime(e.target.value)}
+                            className="bg-transparent outline-none text-right w-[70px]"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 px-3 py-2">
+                        <span className="text-sm opacity-70 w-16">Fin</span>
+                        <div className="flex flex-1 gap-2 justify-end">
+                          <input
+                            type="date"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            className="bg-transparent outline-none text-right w-[120px]"
+                          />
+                          <input
+                            type="time"
+                            value={endTime}
+                            onChange={(e) => setEndTime(e.target.value)}
+                            className="bg-transparent outline-none text-right w-[70px]"
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Notes (optionnel)"
+                  className="w-full rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-4 py-3 outline-none focus:ring-2 focus:ring-purple-500 resize-none h-24"
+                />
+              </div>
+
+              <DrawerFooter>
+                <button
+                  onClick={() => {
+                    addEvent();
+                    setFormCollapsed(true); // Close drawer on submit
+                  }}
+                  disabled={!title.trim() || !date || !startTime || (!isSingleDay && !endDate)}
+                  className="w-full rounded-xl bg-black text-white dark:bg-white dark:text-black h-12 text-base font-medium disabled:opacity-50 active:scale-95 transition"
+                >
+                  Ajouter
+                </button>
+                <DrawerClose asChild>
+                  <button className="w-full rounded-xl border border-black/10 dark:border-white/10 h-12 text-base font-medium">Annuler</button>
+                </DrawerClose>
+              </DrawerFooter>
+            </div>
+          </DrawerContent>
+        </Drawer>
 
       {/* === LISTE (scroll dans une box) === */}
       <section
@@ -506,11 +524,15 @@ export default function CalendarPage() {
           ))}
 
           {grouped.size === 0 && (
-            <div className="rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-neutral-900/60 backdrop-blur-md shadow p-6 text-center">
-              <div className="text-2xl mb-1">🗓️</div>
-              <p className="text-sm opacity-80">
-                Aucun événement prévu. Ajoutez-en un pour planifier à deux !
-              </p>
+            <div className="flex flex-col items-center justify-center py-12 opacity-50">
+              <div className="text-4xl mb-2">🗓️</div>
+              <p>Aucun événement prévu</p>
+              <button 
+                onClick={() => setFormCollapsed(false)}
+                className="mt-4 text-sm text-purple-500 hover:underline"
+              >
+                Créer mon premier événement
+              </button>
             </div>
           )}
         </div>

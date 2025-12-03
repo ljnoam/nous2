@@ -16,7 +16,7 @@ const configuration = OneSignal.createConfiguration({
 
 const client = new OneSignal.DefaultApi(configuration);
 
-type NotificationType = 'note' | 'event' | 'photo'
+type NotificationType = 'note' | 'event' | 'photo' | 'bucket_item'
 
 interface NotificationPayload {
   type: NotificationType
