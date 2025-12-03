@@ -299,7 +299,7 @@ export default function CalendarPage() {
   }
 
   const containerStyle: CSSProperties = {
-    "--gap": "8px",
+    "--gap": "12px",
   } as any;
 
   return (
@@ -307,7 +307,7 @@ export default function CalendarPage() {
       <HeartBackground />
       <main
         style={containerStyle}
-        className="relative z-10 flex w-full flex-col min-h-[calc(var(--viewport-height)-var(--nav-h))] pb-[calc(env(safe-area-inset-bottom)+var(--gap))] px-2 pt-[calc(env(safe-area-inset-top)+var(--gap))]"
+        className="relative z-10 flex w-full flex-col min-h-[calc(var(--viewport-height)-var(--nav-h))] pb-24 px-3 pt-[calc(env(safe-area-inset-top)+var(--gap))]"
       >
         {/* Floating Header */}
         <div className="sticky top-[calc(env(safe-area-inset-top)+var(--gap))] z-20 mb-4">

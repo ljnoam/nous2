@@ -59,7 +59,7 @@ export default function BucketPage() {
   }
 
   const containerStyle: CSSProperties = {
-    "--gap": "8px",
+    "--gap": "12px",
   } as any;
 
   return (
@@ -68,7 +68,7 @@ export default function BucketPage() {
       
       <main 
         style={containerStyle}
-        className="relative z-10 min-h-screen pb-28 px-2 pt-[calc(env(safe-area-inset-top)+var(--gap))]"
+        className="relative z-10 min-h-screen pb-24 px-3 pt-[calc(env(safe-area-inset-top)+var(--gap))]"
       >
         <div className="max-w-6xl mx-auto space-y-6">
           

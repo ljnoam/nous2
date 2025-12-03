@@ -186,7 +186,7 @@ export default function ProfilePage() {
   return (
     <>
       <HeartBackground />
-      <main className="relative z-10 space-y-6 pt-8 pb-28 px-4">
+      <main className="relative z-10 space-y-6 pt-[calc(env(safe-area-inset-top)+12px)] pb-20 px-3">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Salut {profile?.first_name || 'toi'} 👋</h1>
