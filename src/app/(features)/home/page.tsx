@@ -14,6 +14,7 @@ import { useEffect, useState } from 'react';
 export default function HomePage() {
   const router = useRouter();
   const [firstName, setFirstName] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
@@ -42,11 +43,15 @@ export default function HomePage() {
           .eq('id', uid)
           .maybeSingle();
         setFirstName(prof?.first_name ?? null);
+        setLoading(false);
       } catch (e) {
         console.error('HomePage exception:', e);
+        setLoading(false);
       }
     })();
   }, [router]);
+
+  if (loading) return null; // Or a loading spinner if preferred
 
   return (
     <>

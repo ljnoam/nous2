@@ -3,7 +3,7 @@
 import HeartBackground from '@/components/home/HeartBackground'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabase/client'
-import { Lock, Map as MapIcon, Plus, Unlock, ChevronRight, Images, ChevronDown, ChevronUp } from 'lucide-react'
+import { Lock, Plus, Unlock, ChevronRight, Images, ChevronDown, ChevronUp } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, type CSSProperties } from 'react'
@@ -36,7 +36,6 @@ export default function AlbumsPage() {
   const [coupleId, setCoupleId] = useState<string | null>(null)
   const [albums, setAlbums] = useState<Album[]>([])
   const [showPrivate, setShowPrivate] = useState(false)
-  const [view, setView] = useState<'grid' | 'map'>('grid')
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
   useEffect(() => {
@@ -142,67 +141,57 @@ export default function AlbumsPage() {
             </div>
           </div>
 
-          {view === 'grid' ? (
-            <>
-              {/* Normal Albums */}
-              <section>
-                {normalAlbums.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-12 opacity-50">
-                    <div className="text-4xl mb-2">📷</div>
-                    <p>Aucun album</p>
+          {/* Normal Albums */}
+          <section>
+            {normalAlbums.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 opacity-50">
+                <div className="text-4xl mb-2">📷</div>
+                <p>Aucun album</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-6">
+                {normalAlbums.map(album => (
+                  <AlbumCard key={album.id} album={album} />
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* Private Albums Section */}
+          <section className="pt-4">
+            <div 
+              onClick={() => setShowPrivate(!showPrivate)}
+              className="rounded-2xl border border-black/5 dark:border-white/5 bg-white/50 dark:bg-neutral-900/50 p-4 flex items-center justify-between cursor-pointer active:bg-black/5 dark:active:bg-white/5 transition backdrop-blur-sm"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
+                  <Lock className="h-5 w-5 opacity-50" />
+                </div>
+                <span className="font-medium">Albums Masqués</span>
+              </div>
+              {showPrivate ? (
+                <ChevronUp className="h-5 w-5 opacity-30" />
+              ) : (
+                <ChevronDown className="h-5 w-5 opacity-30" />
+              )}
+            </div>
+
+            {showPrivate && (
+              <div className="mt-6 animate-in fade-in slide-in-from-top-2 duration-300">
+                {privateAlbums.length === 0 ? (
+                  <div className="py-8 text-center opacity-50 text-sm">
+                    Aucun album privé
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-6">
-                    {normalAlbums.map(album => (
+                    {privateAlbums.map(album => (
                       <AlbumCard key={album.id} album={album} />
                     ))}
                   </div>
                 )}
-              </section>
-
-              {/* Private Albums Section */}
-              <section className="pt-4">
-                <div 
-                  onClick={() => setShowPrivate(!showPrivate)}
-                  className="rounded-2xl border border-black/5 dark:border-white/5 bg-white/50 dark:bg-neutral-900/50 p-4 flex items-center justify-between cursor-pointer active:bg-black/5 dark:active:bg-white/5 transition backdrop-blur-sm"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
-                      <Lock className="h-5 w-5 opacity-50" />
-                    </div>
-                    <span className="font-medium">Albums Masqués</span>
-                  </div>
-                  {showPrivate ? (
-                    <ChevronUp className="h-5 w-5 opacity-30" />
-                  ) : (
-                    <ChevronDown className="h-5 w-5 opacity-30" />
-                  )}
-                </div>
-
-                {showPrivate && (
-                  <div className="mt-6 animate-in fade-in slide-in-from-top-2 duration-300">
-                    {privateAlbums.length === 0 ? (
-                      <div className="py-8 text-center opacity-50 text-sm">
-                        Aucun album privé
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-6">
-                        {privateAlbums.map(album => (
-                          <AlbumCard key={album.id} album={album} />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </section>
-            </>
-          ) : (
-            <div className="rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-neutral-900/60 backdrop-blur-md p-8 text-center">
-              <MapIcon className="h-12 w-12 mx-auto opacity-50 mb-4" />
-              <p className="text-lg font-semibold">Vue Carte</p>
-              <p className="text-sm opacity-70 mt-2">La carte interactive arrive bientôt...</p>
-            </div>
-          )}
+              </div>
+            )}
+          </section>
         </div>
 
         {/* Create Album Drawer */}

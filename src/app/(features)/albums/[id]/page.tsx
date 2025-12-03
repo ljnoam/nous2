@@ -2,11 +2,9 @@
 
 import HeartBackground from '@/components/home/HeartBackground'
 import { Button } from '@/components/ui/button'
-import { getCurrentPosition } from '@/lib/geolocation'
 import { compressImage, createThumbnail } from '@/lib/image-utils'
 import { supabase } from '@/lib/supabase/client'
-import exifr from 'exifr'
-import { ArrowLeft, MapPin, Trash2, Upload, X, ChevronLeft, Plus, MoreVertical, Pencil, ChevronRight } from 'lucide-react'
+import { ArrowLeft, Trash2, Upload, X, ChevronLeft, Plus, MoreVertical, Pencil, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { use, useEffect, useState, type CSSProperties, useCallback } from 'react'
@@ -35,9 +33,6 @@ type Photo = {
   url: string
   thumbnail_url: string | null
   caption: string | null
-  latitude: number | null
-  longitude: number | null
-  location_name: string | null
   taken_at: string | null
   created_at: string
 }
@@ -144,27 +139,6 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
       throw new Error('Missing required data for upload')
     }
 
-    // Extract EXIF data
-    let exifData: any = null
-    try {
-      exifData = await exifr.parse(file)
-    } catch (e) {}
-
-    // Get location
-    let latitude: number | null = null
-    let longitude: number | null = null
-
-    if (exifData?.latitude && exifData?.longitude) {
-      latitude = exifData.latitude
-      longitude = exifData.longitude
-    } else {
-      const coords = await getCurrentPosition()
-      if (coords) {
-        latitude = coords.latitude
-        longitude = coords.longitude
-      }
-    }
-
     // Compress image
     const compressed = await compressImage(file)
     const thumbnail = await createThumbnail(file)
@@ -194,9 +168,7 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
       couple_id: coupleId,
       url: urlData.publicUrl,
       thumbnail_url: thumbUrlData.publicUrl,
-      latitude,
-      longitude,
-      taken_at: exifData?.DateTimeOriginal || null,
+      taken_at: null, // Removed EXIF extraction for now as per request to remove geolocation/EXIF logic
     })
   }
 

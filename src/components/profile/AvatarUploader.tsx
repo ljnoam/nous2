@@ -41,19 +41,22 @@ export default function AvatarUploader({
   }
 
   return (
-    <div className="flex flex-col items-center">
-      <div className="relative">
-        <img
-          src={avatarUrl || '/icons/icon-192.png'}
-          alt="Avatar"
-          className="h-28 w-28 rounded-full object-cover border-2 border-white dark:border-neutral-800 shadow-lg ring-2 ring-pink-400/40 transition-all duration-200"
-        />
-        <label className="absolute -bottom-2 -right-2 cursor-pointer rounded-full bg-black text-white dark:bg-white dark:text-black p-2 shadow hover:scale-105 active:scale-95 transition">
-          <Camera className="h-4 w-4" />
-          <input type="file" accept="image/*" onChange={onFile} className="hidden" disabled={loading} />
-        </label>
+    <div className="relative group w-full h-full">
+      <img
+        src={avatarUrl || '/icons/icon-192.png'}
+        alt="Avatar"
+        className="w-full h-full rounded-full object-cover transition-transform duration-200 group-hover:scale-105"
+      />
+      <div className={`absolute inset-0 rounded-full flex items-center justify-center bg-black/30 transition-opacity duration-200 ${loading ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+         {loading ? (
+           <div className="h-5 w-5 border-2 border-white/50 border-t-white rounded-full animate-spin" />
+         ) : (
+           <Camera className="h-6 w-6 text-white/90 drop-shadow-md" />
+         )}
       </div>
-      <p className="text-xs opacity-60 mt-2">{loading ? 'Envoi…' : 'Changer la photo'}</p>
+      <label className="absolute inset-0 cursor-pointer rounded-full">
+        <input type="file" accept="image/*" onChange={onFile} className="hidden" disabled={loading} />
+      </label>
     </div>
   )
 }

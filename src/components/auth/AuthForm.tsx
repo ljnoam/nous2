@@ -61,6 +61,10 @@ function makeHeartCloud(count: number): HeartSpec[] {
   return Array.from({ length: count }, (_, i) => generateHeart(i))
 }
 
+import LegalModal from "@/components/legal/LegalModal"
+
+// ... (imports remain the same, just adding LegalModal import)
+
 export default function AuthForm({ defaultMode = "login" as Mode }: { defaultMode?: Mode }) {
   const router = useRouter()
   const search = useSearchParams()
@@ -70,6 +74,7 @@ export default function AuthForm({ defaultMode = "login" as Mode }: { defaultMod
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
+  const [legalModal, setLegalModal] = useState<'privacy' | 'terms' | null>(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -125,7 +130,7 @@ export default function AuthForm({ defaultMode = "login" as Mode }: { defaultMod
         router.replace("/login?verify=1")
         return
       }
-      router.replace("/onboarding")
+      router.replace("/home")
     } catch (e: any) {
       setError(e?.message ?? "Action impossible pour le moment")
     } finally {
@@ -139,6 +144,12 @@ export default function AuthForm({ defaultMode = "login" as Mode }: { defaultMod
   return (
     <div className="min-h-screen w-full flex items-center justify-center px-4 relative overflow-hidden">
       <HeartsBackground />
+
+      <LegalModal 
+        isOpen={!!legalModal} 
+        onClose={() => setLegalModal(null)} 
+        type={legalModal} 
+      />
 
       <div className="w-full max-w-sm relative z-10">
         {search?.get("verify") && (
@@ -242,6 +253,30 @@ export default function AuthForm({ defaultMode = "login" as Mode }: { defaultMod
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
+              </label>
+            )}
+
+            {mode === 'register' && (
+              <label className="flex items-start gap-3 mt-4 cursor-pointer group">
+                <div className="relative flex items-center">
+                  <input
+                    type="checkbox"
+                    required
+                    className="peer h-5 w-5 appearance-none rounded-md border-2 border-black/20 dark:border-white/20 bg-white/50 dark:bg-black/20 checked:bg-pink-500 checked:border-pink-500 transition-all"
+                  />
+                  <svg
+                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <span className="text-xs text-neutral-600 dark:text-neutral-400 leading-tight pt-0.5 group-hover:text-neutral-900 dark:group-hover:text-neutral-200 transition-colors">
+                  J'accepte les <button type="button" onClick={(e) => { e.preventDefault(); setLegalModal('terms') }} className="underline hover:text-pink-500">Conditions Générales</button> et la <button type="button" onClick={(e) => { e.preventDefault(); setLegalModal('privacy') }} className="underline hover:text-pink-500">Politique de Confidentialité</button>.
+                </span>
               </label>
             )}
 

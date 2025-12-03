@@ -181,140 +181,139 @@ export default function ProfilePage() {
     router.replace('/register')
   }
 
-
-
   return (
     <>
       <HeartBackground />
-      <main className="relative z-10 space-y-6 pt-[calc(env(safe-area-inset-top)+12px)] pb-20 px-3">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Salut {profile?.first_name || 'toi'} 👋</h1>
-        <DarkModeToggle />
-      </div>
+      <main className="relative z-10 space-y-6 pt-[calc(env(safe-area-inset-top)+20px)] pb-20 px-4">
+        
+        {/* Top Actions */}
+        <div className="flex items-center justify-end">
+          <DarkModeToggle />
+        </div>
 
-      {/* Profil */}
-      {me && (
-        <div className="rounded-2xl border border-black/10 dark:border-white/10 bg-white/80 dark:bg-neutral-900/60 backdrop-blur-md shadow p-5 flex flex-col items-center sm:flex-row gap-4">
-          <div className="relative">
-            <div className="absolute -inset-1 rounded-full" style={ringStyleForStreak(streak)}></div>
-            <div className="relative">
-              <AvatarUploader userId={me.id} avatarUrl={profile?.avatar_url} onChange={onAvatarChange} />
-              {streak > 0 && (
-                <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] px-2 py-0.5 rounded-full bg-pink-500 text-white shadow">{streak}🔥</span>
+        {/* Profile Header - Center & Clean */}
+        {me && (
+          <div className="flex flex-col items-center text-center space-y-6 mt-4">
+            <div className="relative group">
+              <div className="absolute -inset-1 rounded-full opacity-70 blur-sm transition group-hover:opacity-100" style={ringStyleForStreak(streak)}></div>
+              <div className="relative">
+                <div className="h-32 w-32 rounded-full border-[6px] border-white dark:border-neutral-900 shadow-2xl relative overflow-hidden">
+                   <AvatarUploader userId={me.id} avatarUrl={profile?.avatar_url} onChange={onAvatarChange} />
+                </div>
+                {streak > 0 && (
+                  <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-sm font-bold px-3 py-1 rounded-full bg-pink-500 text-white shadow-lg border-[3px] border-white dark:border-neutral-900 z-10 whitespace-nowrap">
+                    {streak} 🔥
+                  </span>
+                )}
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              {!editingName ? (
+                <div className="flex items-center justify-center gap-2">
+                  <h1 className="text-3xl font-bold tracking-tight text-neutral-900 dark:text-white">
+                    {profile?.first_name || 'Prénom non défini'}
+                  </h1>
+                  <button
+                    onClick={() => setEditingName(true)}
+                    className="opacity-40 hover:opacity-100 transition p-1"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 justify-center">
+                  <input
+                    value={firstNameInput}
+                    onChange={(e) => setFirstNameInput(e.target.value)}
+                    placeholder="Ton prénom"
+                    className="w-40 text-center rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-2 py-1 outline-none text-lg font-bold"
+                    autoFocus
+                  />
+                  <button onClick={saveFirstName} className="text-xs bg-black text-white dark:bg-white dark:text-black rounded-lg px-2 py-1">OK</button>
+                  <button onClick={() => { setEditingName(false); setFirstNameInput(profile?.first_name || '') }} className="text-xs opacity-60 px-2">Annuler</button>
+                </div>
               )}
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">{me.email}</p>
             </div>
           </div>
-          <div className="flex-1 text-center sm:text-left">
-            {!editingName ? (
-              <div className="flex flex-col items-center sm:items-start gap-1">
-                <p className="text-lg font-semibold">{profile?.first_name || 'Prénom non défini'}</p>
-                <button
-                  onClick={() => setEditingName(true)}
-                  className="text-xs rounded-full px-3 py-1 border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/10 transition"
-                >
-                  Modifier
-                </button>
+        )}
+
+        {/* Couple Status Card - Compact */}
+        {status && (
+          <div className="rounded-3xl bg-white/60 dark:bg-neutral-900/60 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-sm p-4 flex flex-col items-center justify-center text-center space-y-2 relative overflow-hidden">
+             <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                <Heart className="w-16 h-16 text-pink-500 rotate-12" />
               </div>
-            ) : (
-              <div className="flex items-center gap-2 justify-center sm:justify-start">
-                <input
-                  value={firstNameInput}
-                  onChange={(e) => setFirstNameInput(e.target.value)}
-                  placeholder="Ton prénom"
-                  className="rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-2 py-1 outline-none text-sm"
-                />
-                <button
-                  onClick={saveFirstName}
-                  className="text-xs rounded-lg px-2 py-1 border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/10"
-                >
-                  OK
-                </button>
-                <button
-                  onClick={() => {
-                    setEditingName(false)
-                    setFirstNameInput(profile?.first_name || '')
-                  }}
-                  className="text-xs rounded-lg px-2 py-1 border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/10"
-                >
-                  Annuler
-                </button>
+            
+            <span className="text-xs font-semibold uppercase tracking-wider text-pink-500">En couple depuis</span>
+            
+            <div className="flex items-center gap-2 bg-white/50 dark:bg-black/20 px-4 py-2 rounded-full z-10">
+              <span className="text-base font-medium text-neutral-900 dark:text-white">
+                {new Date(status.started_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+              </span>
+              <button 
+                onClick={() => { setEditDate(fmtDateInput(status.started_at)); setShowEditStart(true) }} 
+                className="opacity-40 hover:opacity-100 transition"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+              </button>
+            </div>
+
+            {partner && (
+              <div className="text-sm text-neutral-500 dark:text-neutral-400">
+                avec <span className="font-semibold text-neutral-900 dark:text-white">{partner.first_name || partner.display_name}</span>
               </div>
             )}
-            <p className="text-xs opacity-70 mt-1">{me.email}</p>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Couple */}
-      {status && (
-        <div className="rounded-2xl border border-pink-200/20 dark:border-pink-800/20 bg-gradient-to-r from-pink-50/80 to-rose-100/80 dark:from-pink-900/20 dark:to-rose-800/20 backdrop-blur-lg shadow-sm p-5 text-center">
-          <Heart className="mx-auto h-5 w-5 text-pink-500 mb-1" />
-          <p className="text-sm opacity-70">En couple depuis le</p>
-          <p className="text-lg font-bold">{new Date(status.started_at).toLocaleDateString('fr-FR')}</p>
+        {/* Settings Section */}
+        <div className="space-y-4 pt-4">
+          <h3 className="text-sm font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider px-1">Paramètres</h3>
+          {me && <Preferences userId={me.id} />}
+          <Security />
+        </div>
+
+        {/* Logout */}
+        <div className="pt-4 pb-8 flex justify-center">
           <button
-            onClick={() => { setEditDate(fmtDateInput(status.started_at)); setShowEditStart(true) }}
-            className="mt-2 text-xs rounded-full px-3 py-1 border border-pink-400/40 hover:bg-pink-500/10"
-          >Modifier la date</button>
-          {daysTogether !== null && <p className="text-sm opacity-70">Soit {daysTogether} jours 🫶</p>}
-          {partner && (
-            <p className="text-sm mt-1">
-              <span className="opacity-70">Avec </span>
-              <span className="font-semibold">{partner.first_name || partner.display_name || 'Ton/ta partenaire'}</span>
-            </p>
-          )}
-          {status.members_count < 2 && (
-            <p className="text-xs opacity-60 mt-2">Code du couple : {status.join_code || '—'}</p>
-          )}
+            onClick={logout}
+            className="group flex items-center gap-2 text-neutral-400 hover:text-red-500 transition-colors text-sm font-medium px-4 py-2"
+          >
+            <LogOut className="h-4 w-4 group-hover:scale-110 transition-transform" />
+            Se déconnecter
+          </button>
         </div>
-      )}
 
-      {/* Stats */}
-      <StatsRow coupleId={status?.couple_id} />
-
-      {/* Preferences */}
-      {me && <Preferences userId={me.id} />}
-
-      {/* Security */}
-      <Security />
-
-      {/* Actions */}
-      <div className="flex flex-col sm:flex-row justify-center gap-3">
-        <button
-          onClick={logout}
-          className="flex-1 flex items-center justify-center gap-2 rounded-full border border-black/10 dark:border-white/10 bg-white/80 dark:bg-neutral-900/70 px-4 py-3 font-medium shadow hover:bg-white/90 dark:hover:bg-neutral-800 transition"
-        >
-          <LogOut className="h-5 w-5" />
-          Déconnexion
-        </button>
-      </div>
-      {showLogoutConfirm && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-neutral-900 rounded-2xl p-5 border border-black/10 dark:border-white/10 max-w-sm w-[92vw]">
-            <h3 className="text-lg font-semibold mb-2">Se déconnecter ?</h3>
-            <p className="text-sm opacity-70 mb-4">Tu pourras te reconnecter à tout moment.</p>
-            <div className="flex justify-end gap-2">
-              <button onClick={() => setShowLogoutConfirm(false)} className="rounded-xl px-3 py-2 border border-black/10 dark:border-white/10">Annuler</button>
-              <button onClick={confirmLogout} className="rounded-xl px-3 py-2 bg-black text-white dark:bg-white dark:text-black">Déconnexion</button>
+        {/* Modals */}
+        {showLogoutConfirm && (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-neutral-900 rounded-3xl p-6 border border-black/10 dark:border-white/10 max-w-sm w-[90vw] shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
+              <h3 className="text-xl font-bold mb-2 text-center">Se déconnecter ?</h3>
+              <p className="text-sm text-neutral-500 text-center mb-6">Tu pourras te reconnecter à tout moment.</p>
+              <div className="flex gap-3">
+                <button onClick={() => setShowLogoutConfirm(false)} className="flex-1 rounded-2xl px-4 py-3 font-medium bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition">Annuler</button>
+                <button onClick={confirmLogout} className="flex-1 rounded-2xl px-4 py-3 font-medium bg-black text-white dark:bg-white dark:text-black hover:opacity-90 transition">Déconnexion</button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {showEditStart && status && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-neutral-900 rounded-2xl p-5 border border-black/10 dark:border-white/10 max-w-sm w-[92vw]">
-            <h3 className="text-lg font-semibold mb-2">Modifier la date</h3>
-            <p className="text-sm opacity-70 mb-3">Limité à ±2 ans autour de la date actuelle.</p>
-            <DateGuardInput current={status.started_at} value={editDate || ''} onChange={setEditDate} />
-            <div className="flex justify-end gap-2 mt-4">
-              <button onClick={() => setShowEditStart(false)} className="rounded-xl px-3 py-2 border border-black/10 dark:border-white/10">Annuler</button>
-              <button onClick={saveStartDate} className="rounded-xl px-3 py-2 bg-pink-600 text-white hover:opacity-90">Enregistrer</button>
+        {showEditStart && status && (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-neutral-900 rounded-3xl p-6 border border-black/10 dark:border-white/10 max-w-sm w-[90vw] shadow-2xl">
+              <h3 className="text-lg font-bold mb-2">Modifier la date</h3>
+              <p className="text-sm text-neutral-500 mb-4">Limité à ±2 ans autour de la date actuelle.</p>
+              <DateGuardInput current={status.started_at} value={editDate || ''} onChange={setEditDate} />
+              <div className="flex justify-end gap-2 mt-6">
+                <button onClick={() => setShowEditStart(false)} className="rounded-xl px-4 py-2 text-sm font-medium hover:bg-neutral-100 dark:hover:bg-neutral-800 transition">Annuler</button>
+                <button onClick={saveStartDate} className="rounded-xl px-4 py-2 bg-pink-600 text-white text-sm font-medium hover:bg-pink-700 transition shadow-lg shadow-pink-500/20">Enregistrer</button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </main>
+        )}
+      </main>
     </>
   )
 }
@@ -340,9 +339,9 @@ function StatsRow({ coupleId }: { coupleId?: string | null }) {
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-neutral-900/60 backdrop-blur-md p-4 text-center shadow-sm hover:scale-[1.02] transition-transform">
-      <div className="text-xs opacity-60">{label}</div>
-      <div className="text-xl font-bold">{value}</div>
+    <div className="rounded-3xl border border-white/20 dark:border-white/10 bg-white/60 dark:bg-neutral-900/60 backdrop-blur-xl p-6 text-center shadow-sm hover:scale-[1.02] transition-transform flex flex-col items-center justify-center h-full">
+      <div className="text-3xl font-bold text-neutral-900 dark:text-white mb-1">{value}</div>
+      <div className="text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">{label}</div>
     </div>
   )
 }
