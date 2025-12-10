@@ -43,7 +43,11 @@ export default function OneSignalInit({ userId }: { userId?: string }) {
       }
     };
 
-    runOneSignal();
+    const t = setTimeout(() => {
+      runOneSignal();
+    }, 3000); // Delay by 3 seconds to unblock main thread
+
+    return () => clearTimeout(t);
   }, [userId]);
 
   return null;

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { Camera } from 'lucide-react'
+import NextImage from 'next/image'
 
 export default function AvatarUploader({
   userId,
@@ -42,10 +43,13 @@ export default function AvatarUploader({
 
   return (
     <div className="relative group w-full h-full">
-      <img
+      <NextImage
         src={avatarUrl || '/icons/icon-192.png'}
         alt="Avatar"
-        className="w-full h-full rounded-full object-cover transition-transform duration-200 group-hover:scale-105"
+        fill
+        className="rounded-full object-cover transition-transform duration-200 group-hover:scale-105"
+        sizes="(max-width: 768px) 100vw, 300px"
+        priority
       />
       <div className={`absolute inset-0 rounded-full flex items-center justify-center bg-black/30 transition-opacity duration-200 ${loading ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
          {loading ? (

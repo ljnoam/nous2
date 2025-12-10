@@ -2,13 +2,14 @@ import { Bucket } from '@/lib/types'
 import { Link } from 'lucide-react' // Wait, Link is from next/link usually. Lucide has Link icon.
 import NextLink from 'next/link'
 import { CheckSquare, ListTodo } from 'lucide-react'
+import { memo } from 'react'
 
 interface BucketCardProps {
   bucket: Bucket
   itemCount?: number
 }
 
-export default function BucketCard({ bucket, itemCount = 0 }: BucketCardProps) {
+const BucketCard = memo(function BucketCard({ bucket, itemCount = 0 }: BucketCardProps) {
   return (
     <NextLink href={`/bucket/${bucket.id}`} className="group block">
       <div className="relative aspect-square rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 mb-3 shadow-sm border border-black/5 dark:border-white/5 flex items-center justify-center transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-md">
@@ -36,4 +37,6 @@ export default function BucketCard({ bucket, itemCount = 0 }: BucketCardProps) {
       </div>
     </NextLink>
   )
-}
+})
+
+export default BucketCard

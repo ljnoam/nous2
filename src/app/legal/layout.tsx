@@ -1,4 +1,4 @@
-import HeartBackground from '@/components/home/HeartBackground'
+
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
@@ -9,7 +9,7 @@ export default function LegalLayout({
 }) {
   return (
     <>
-      <HeartBackground />
+
       <div className="relative z-10 min-h-screen p-6 md:p-12">
         <Link 
           href="/" 

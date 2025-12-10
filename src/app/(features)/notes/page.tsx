@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import HeartBackground from "@/components/home/HeartBackground"
+
 import NoteCard from "@/components/notes/NoteCard"
 import BlurText from "@/components/ui/BlurText"
 import { Button } from "@/components/ui/button"
@@ -17,7 +17,7 @@ import {
 import { NotebookPen, Plus } from "lucide-react"
 import { AnimatePresence } from "motion/react"
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 
 type Note = {
   id: string
@@ -128,7 +128,7 @@ export default function NotesPage() {
     }
   }
 
-  async function deleteNote(id: string) {
+  const deleteNote = useCallback(async (id: string) => {
     // Optimistic delete
     const previousNotes = [...notes]
     setNotes(notes.filter(n => n.id !== id))
@@ -140,7 +140,7 @@ export default function NotesPage() {
       console.error("Error deleting note:", e)
       setNotes(previousNotes)
     }
-  }
+  }, [notes])
 
   const containerStyle: React.CSSProperties = {
     "--gap": "12px",
@@ -148,7 +148,7 @@ export default function NotesPage() {
 
   return (
     <>
-      <HeartBackground />
+
       <main 
         style={containerStyle}
         className="relative z-10 h-[100dvh] overflow-y-auto pb-24 px-3 pt-[calc(env(safe-area-inset-top)+var(--gap))] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']"

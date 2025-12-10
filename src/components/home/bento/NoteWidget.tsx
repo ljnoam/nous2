@@ -71,7 +71,7 @@ export default function NoteWidget() {
       <div className="mt-4 flex-1 flex flex-col justify-center">
         {lastNote ? (
           <>
-            <p className="text-sm font-handwriting leading-relaxed line-clamp-3 italic text-neutral-800 dark:text-neutral-200">
+            <p className="text-sm font-handwriting leading-relaxed line-clamp-3 italic text-neutral-800 dark:text-neutral-200 min-h-[4.5em]">
               "{lastNote.content}"
             </p>
             <p className="text-xs text-right mt-2 text-rose-500 opacity-80">

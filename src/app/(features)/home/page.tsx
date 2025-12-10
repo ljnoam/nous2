@@ -5,7 +5,7 @@ import EventWidget from '@/components/home/bento/EventWidget';
 import LoveWidget from '@/components/home/bento/LoveWidget';
 import NoteWidget from '@/components/home/bento/NoteWidget';
 import QuickActions from '@/components/home/bento/QuickActions';
-import HeartBackground from '@/components/home/HeartBackground';
+
 import BlurText from '@/components/ui/BlurText';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';

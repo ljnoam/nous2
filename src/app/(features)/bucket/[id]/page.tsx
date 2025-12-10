@@ -1,6 +1,6 @@
 'use client'
 
-import HeartBackground from '@/components/home/HeartBackground'
+
 import { supabase } from '@/lib/supabase/client'
 import { ArrowLeft, Check, Plus, Trash2, MoreVertical } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -131,7 +131,7 @@ export default function BucketDetailPage({ params }: { params: { id: string } })
 
   return (
     <>
-      <HeartBackground />
+
       
       <main 
         style={containerStyle}

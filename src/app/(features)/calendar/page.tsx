@@ -1,8 +1,9 @@
 "use client";
 
-import HeartBackground from "@/components/home/HeartBackground";
+
 
 import EventForm from "@/components/calendar/EventForm";
+import EventItem from "@/components/calendar/EventItem";
 import { supabase } from "@/lib/supabase/client";
 import {
     Apple,
@@ -304,7 +305,7 @@ export default function CalendarPage() {
 
   return (
     <>
-      <HeartBackground />
+
       <main
         style={containerStyle}
         className="relative z-10 flex w-full flex-col min-h-[calc(var(--viewport-height)-var(--nav-h))] pb-24 px-3 pt-[calc(env(safe-area-inset-top)+var(--gap))]"
@@ -481,43 +482,12 @@ export default function CalendarPage() {
               {/* Events */}
               <ul className="relative space-y-3">
                 {evs.map((ev) => (
-                  <li
+                  <EventItem
                     key={ev.id}
-                    className="relative flex items-start justify-between gap-3"
-                    style={{ zIndex: openMenuId === ev.id ? 100 : 1 }}
-                  >
-                    <div className="flex-1">
-                      <p className="font-semibold text-lg">{ev.title}</p>
-                      <p className="text-xs opacity-70 flex items-center gap-1 mt-0.5">
-                        <Clock3 className="h-3.5 w-3.5" />
-                        <span>
-                          {new Date(ev.starts_at).toLocaleTimeString('fr-FR', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                          {ev.ends_at
-                            ? ` → ${new Date(ev.ends_at).toLocaleTimeString('fr-FR', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}`
-                            : ''}
-                        </span>
-                      </p>
-                      {ev.notes && (
-                        <p className="italic text-sm opacity-60 mt-1">{ev.notes}</p>
-                      )}
-                    </div>
-                    <div data-calendar-menu className="relative shrink-0">
-                      <button
-                        data-menu-trigger={ev.id}
-                        className="rounded-lg px-2 py-1 hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition"
-                        title="Actions événement"
-                        onClick={() => setOpenMenuId(ev.id)}
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </li>
+                    ev={ev}
+                    isOpen={openMenuId === ev.id}
+                    onOpenMenu={setOpenMenuId}
+                  />
                 ))}
               </ul>
             </div>

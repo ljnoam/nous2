@@ -34,7 +34,9 @@ const VARIANTS = [
   "bg-[#fff1f2] border-[#ffe4e6] text-pink-900 dark:bg-pink-950/30 dark:border-pink-800/40 dark:text-pink-100",
 ]
 
-export default function NoteCard({ note, index, onDelete, isAuthor }: NoteCardProps) {
+import { memo } from "react"
+
+const NoteCard = memo(function NoteCard({ note, index, onDelete, isAuthor }: NoteCardProps) {
   const font = FONTS[index % FONTS.length]
   const variant = VARIANTS[index % VARIANTS.length]
   const rotation = index % 2 === 0 ? "rotate-1" : "-rotate-1"
@@ -78,4 +80,6 @@ export default function NoteCard({ note, index, onDelete, isAuthor }: NoteCardPr
       )}
     </motion.div>
   )
-}
+})
+
+export default NoteCard

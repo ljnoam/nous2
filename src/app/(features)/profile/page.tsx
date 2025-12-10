@@ -1,6 +1,6 @@
 'use client'
 
-import HeartBackground from '@/components/home/HeartBackground'
+
 import AvatarUploader from '@/components/profile/AvatarUploader'
 import Preferences from '@/components/profile/Preferences'
 import Security from '@/components/profile/Security'
@@ -183,7 +183,7 @@ export default function ProfilePage() {
 
   return (
     <>
-      <HeartBackground />
+
       <main className="relative z-10 space-y-6 pt-[calc(env(safe-area-inset-top)+20px)] pb-20 px-4">
         
         {/* Top Actions */}

@@ -1,6 +1,7 @@
 'use client'
 
-import HeartBackground from '@/components/home/HeartBackground'
+
+import AlbumCard from '@/components/albums/AlbumCard'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabase/client'
 import { Lock, Plus, Unlock, ChevronRight, Images, ChevronDown, ChevronUp } from 'lucide-react'
@@ -114,7 +115,7 @@ export default function AlbumsPage() {
 
   return (
     <>
-      <HeartBackground />
+
       
       <main 
         style={containerStyle}
@@ -212,41 +213,7 @@ export default function AlbumsPage() {
   )
 }
 
-function AlbumCard({ album }: { album: Album }) {
-  const cover = album.cover_photos?.[0]
 
-  return (
-    <Link href={`/albums/${album.id}`} className="group block">
-      <div className="relative aspect-square rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 mb-3 shadow-sm border border-black/5 dark:border-white/5">
-        {cover ? (
-          <img
-            src={cover.thumbnail_url || cover.url}
-            alt=""
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <span className="text-2xl opacity-20">📷</span>
-          </div>
-        )}
-        {album.is_private && (
-          <div className="absolute top-2 right-2 bg-black/50 backdrop-blur-md text-white rounded-full p-1.5">
-            <Lock className="h-3 w-3" />
-          </div>
-        )}
-      </div>
-      
-      <div className="px-1">
-        <h3 className="font-semibold text-[15px] leading-tight truncate text-black dark:text-white">
-          {album.title}
-        </h3>
-        <p className="text-[13px] text-neutral-500 dark:text-neutral-400 mt-0.5">
-          {album.photo_count || 0} photo{(album.photo_count || 0) > 1 ? 's' : ''}
-        </p>
-      </div>
-    </Link>
-  )
-}
 
 function CreateAlbumDrawer({
   open,

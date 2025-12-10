@@ -1,11 +1,12 @@
 'use client'
 
-import HeartBackground from '@/components/home/HeartBackground'
+
 import { Button } from '@/components/ui/button'
 import { compressImage, createThumbnail } from '@/lib/image-utils'
 import { supabase } from '@/lib/supabase/client'
 import { ArrowLeft, Trash2, Upload, X, ChevronLeft, Plus, MoreVertical, Pencil, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { use, useEffect, useState, type CSSProperties, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -282,7 +283,7 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
   if (!album) {
     return (
       <>
-        <HeartBackground />
+
         <div className="relative z-10 min-h-screen flex items-center justify-center">
           <p>Chargement...</p>
         </div>
@@ -296,7 +297,7 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
 
   return (
     <>
-      <HeartBackground />
+
       
       <main 
         style={containerStyle}
@@ -375,11 +376,12 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
                   className="relative aspect-square bg-neutral-100 dark:bg-neutral-800 cursor-pointer overflow-hidden"
                   onClick={() => setSelectedIndex(index)}
                 >
-                  <img
+                  <Image
                     src={photo.thumbnail_url || photo.url}
                     alt={photo.caption || ''}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 20vw, 16vw"
                   />
                 </div>
               ))}
