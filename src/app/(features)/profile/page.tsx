@@ -2,6 +2,7 @@
 
 
 import AvatarUploader from '@/components/profile/AvatarUploader'
+import FeedbackBox from '@/components/profile/FeedbackBox'
 import Preferences from '@/components/profile/Preferences'
 import Security from '@/components/profile/Security'
 import DarkModeToggle from '@/components/ui/DarkModeToggle'
@@ -267,6 +268,9 @@ export default function ProfilePage() {
             )}
           </div>
         )}
+
+        {/* Feedback Section */}
+        {me && <FeedbackBox userId={me.id} />}
 
         {/* Settings Section */}
         <div className="space-y-4 pt-4">

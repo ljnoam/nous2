@@ -19,6 +19,7 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer"
 import { Switch } from "@/components/ui/switch"
+import SecurityGate from '@/components/security/SecurityGate'
 
 type Album = {
   id: string
@@ -38,6 +39,8 @@ export default function AlbumsPage() {
   const [albums, setAlbums] = useState<Album[]>([])
   const [showPrivate, setShowPrivate] = useState(false)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [isSecurityOpen, setIsSecurityOpen] = useState(false)
+  const [securityContext, setSecurityContext] = useState<'toggle_section' | 'open_album'>('toggle_section') // For future expansion
 
   useEffect(() => {
     ;(async () => {
@@ -161,7 +164,14 @@ export default function AlbumsPage() {
           {/* Private Albums Section */}
           <section className="pt-4">
             <div 
-              onClick={() => setShowPrivate(!showPrivate)}
+              onClick={() => {
+                if (showPrivate) {
+                   setShowPrivate(false)
+                } else {
+                   setSecurityContext('toggle_section')
+                   setIsSecurityOpen(true)
+                }
+              }}
               className="rounded-2xl border border-black/5 dark:border-white/5 bg-white/50 dark:bg-neutral-900/50 p-4 flex items-center justify-between cursor-pointer active:bg-black/5 dark:active:bg-white/5 transition backdrop-blur-sm"
             >
               <div className="flex items-center gap-3">
@@ -207,6 +217,21 @@ export default function AlbumsPage() {
               if (coupleId) fetchAlbums(coupleId)
             }}
           />
+        )}
+        
+        {/* Security Gate */}
+        {coupleId && (
+            <SecurityGate 
+                isOpen={isSecurityOpen}
+                onClose={() => setIsSecurityOpen(false)}
+                coupleId={coupleId}
+                onUnlock={() => {
+                    setIsSecurityOpen(false)
+                    if (securityContext === 'toggle_section') {
+                        setShowPrivate(true)
+                    }
+                }}
+            />
         )}
       </main>
     </>

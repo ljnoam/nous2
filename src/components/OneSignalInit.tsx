@@ -6,6 +6,12 @@ import OneSignal from 'react-onesignal';
 export default function OneSignalInit({ userId }: { userId?: string }) {
   useEffect(() => {
     const runOneSignal = async () => {
+      // Skip on localhost if domain restriction is active in OneSignal dashboard
+      if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+        console.log('OneSignal: Skipped on localhost to detect env.')
+        return
+      }
+
       try {
         await OneSignal.init({
           appId: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID || '',
