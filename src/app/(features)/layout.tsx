@@ -23,7 +23,7 @@ export default function FeaturesLayout({ children }: { children: ReactNode }) {
           className={
             isNotesPage
               ? 'w-full max-w-3xl mx-auto px-3 sm:px-4 h-[var(--viewport-height)] overflow-hidden flex flex-col justify-between'
-              : 'w-full max-w-3xl mx-auto px-3 sm:px-4 pt-[calc(env(safe-area-inset-top)+var(--gap))] pb-[calc(env(safe-area-inset-bottom)+var(--nav-h)+var(--gap))] min-h-screen min-h-[var(--viewport-height)] max-h-[var(--viewport-height)] overflow-y-auto no-scrollbar'
+              : 'w-full max-w-3xl mx-auto px-3 sm:px-4 min-h-screen min-h-[var(--viewport-height)] max-h-[var(--viewport-height)] overflow-y-auto no-scrollbar'
           }
         >
           {children}

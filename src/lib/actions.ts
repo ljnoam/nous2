@@ -3,6 +3,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { sendNotification } from './notifications'
+import { TMDBMedia } from '@/lib/tmdb'
 
 async function getSupabase() {
   const cookieStore = await cookies()
@@ -354,4 +355,192 @@ export async function upsertMood(moodValue: string) {
   }
 
   return data
+}
+
+// --- CINEMATCH ACTIONS ---
+
+export async function createMatchSession(filters: any) {
+  const supabase = await getSupabase()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  // Find user's couple
+  const { data: coupleMember } = await supabase
+      .from('couple_members')
+      .select('couple_id')
+      .eq('user_id', user.id)
+      .maybeSingle()
+  
+  if (!coupleMember) throw new Error('No couple found')
+
+  // Create session
+  const { data, error } = await supabase
+    .from('match_sessions')
+    .insert({
+        couple_id: coupleMember.couple_id,
+        status: 'active',
+        filters
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export async function getActiveMatchSession() {
+  const supabase = await getSupabase()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+
+  // Find user's couple
+  const { data: coupleMember } = await supabase
+      .from('couple_members')
+      .select('couple_id')
+      .eq('user_id', user.id)
+      .maybeSingle()
+  
+  if (!coupleMember) return null
+
+  // Get active session
+  const { data } = await supabase
+    .from('match_sessions')
+    .select('*')
+    .eq('couple_id', coupleMember.couple_id)
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  return data
+}
+
+export async function submitSwipe(sessionId: string, mediaId: number, direction: 'left' | 'right', mediaData: any) {
+  const supabase = await getSupabase()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  // 1. Insert Swipe
+  const { error: insertError } = await supabase
+    .from('match_swipes')
+    .insert({
+        session_id: sessionId,
+        user_id: user.id,
+        media_id: mediaId,
+        direction,
+        media_data: mediaData
+    })
+  
+  if (insertError) {
+      // Ignore unique constraint error if user swipes twice on same (shouldn't happen in UI but good for safety)
+      if (insertError.code !== '23505') throw insertError;
+  }
+
+  // 2. Check for MATCH if swiped RIGHT
+  if (direction === 'right') {
+     // Check if ANYONE ELSE in this session swiped RIGHT on this media_id
+     // strictly: where session_id = X and media_id = Y and direction = 'right' and user_id != ME
+     const { data: partnerSwipe } = await supabase
+        .from('match_swipes')
+        .select('*')
+        .eq('session_id', sessionId)
+        .eq('media_id', mediaId)
+        .eq('direction', 'right')
+        .neq('user_id', user.id)
+        .maybeSingle()
+
+     if (partnerSwipe) {
+         return { status: 'MATCH', media: mediaData }
+     }
+  }
+
+  return { status: 'OK' }
+}
+
+export async function deleteMatchSession(sessionId: string) {
+  const supabase = await getSupabase()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  // 1. Delete swipes first (Cascade manually)
+  const { error: swipeError } = await supabase
+    .from('match_swipes')
+    .delete()
+    .eq('session_id', sessionId)
+
+  if (swipeError) {
+      console.error('Error deleting swipes:', swipeError)
+      throw swipeError
+  }
+
+  // 2. Delete session
+  const { error } = await supabase
+    .from('match_sessions')
+    .delete()
+    .eq('id', sessionId)
+  
+  if (error) throw error
+  return { success: true }
+}
+
+
+const TMDB_API_KEY = process.env.TMDB_API_KEY;
+const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
+
+async function fetchTMDB(endpoint: string, params: Record<string, string> = {}) {
+  // Use server-side env check
+  if (!TMDB_API_KEY) {
+    console.error('TMDB_API_KEY is missing/undefined in process.env');
+    return null;
+  }
+
+  const query = new URLSearchParams({
+    api_key: TMDB_API_KEY,
+    language: 'fr-FR',
+    ...params,
+  });
+
+  try {
+    const res = await fetch(`${TMDB_BASE_URL}${endpoint}?${query.toString()}`);
+    if (!res.ok) {
+      throw new Error(`TMDB Error: ${res.statusText}`);
+    }
+    return await res.json();
+  } catch (error) {
+    console.error('TMDB Fetch Error:', error);
+    return null;
+  }
+}
+
+export async function getDiscovery(
+  type: 'movie' | 'tv',
+  page: number = 1,
+  providers?: string[], 
+  genres?: string[]
+): Promise<TMDBMedia[]> {
+  const endpoint = `/discover/${type}`;
+  
+  const params: Record<string, string> = {
+    page: page.toString(),
+    sort_by: 'popularity.desc',
+    'vote_count.gte': '100',
+    watch_region: 'FR',
+  };
+
+  if (providers && providers.length > 0) {
+    params.with_watch_providers = providers.join('|');
+  }
+
+  if (genres && genres.length > 0) {
+    params.with_genres = genres.join(',');
+  }
+
+  const data = await fetchTMDB(endpoint, params);
+  
+  if (!data?.results) return [];
+
+  return data.results.map((item: any) => ({
+    ...item,
+    media_type: type, 
+  }));
 }

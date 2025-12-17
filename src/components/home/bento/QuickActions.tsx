@@ -6,7 +6,7 @@ import Link from "next/link";
 
 export default function QuickActions() {
   return (
-    <div className="grid grid-cols-3 gap-3">
+    <div className="grid grid-cols-2 gap-3">
       <QuickAction 
         href="/notes" 
         icon={<Send className="w-5 h-5" />} 
@@ -24,6 +24,12 @@ export default function QuickActions() {
         icon={<CalendarPlus className="w-5 h-5" />} 
         label="Agenda" 
         color="bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400"
+      />
+      <QuickAction 
+        href="/cinematch" 
+        icon={<span className="text-xl">🎬</span>} 
+        label="CinéMatch" 
+        color="bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400"
       />
     </div>
   );
