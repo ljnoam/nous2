@@ -299,3 +299,59 @@ export async function createBucketItem(itemData: { bucket_id: string, content: s
 
   return data
 }
+
+export async function upsertMood(moodValue: string) {
+  const supabase = await getSupabase()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  // 1. Upsert mood
+  const { data, error } = await supabase
+    .from('daily_moods')
+    .upsert({
+      user_id: user.id,
+      mood_value: moodValue,
+      mood_date: new Date().toISOString().split('T')[0]
+    }, {
+      onConflict: 'user_id, mood_date'
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+
+  // 2. Notify Partner
+  try {
+    // Need couple_id to find partner
+    const { data: coupleMember } = await supabase
+      .from('couple_members')
+      .select('couple_id')
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    if (coupleMember?.couple_id) {
+      const partnerId = await getPartnerId(supabase, user.id, coupleMember.couple_id)
+      
+      if (partnerId) {
+        const notify = await shouldNotify(supabase, partnerId, 'notify_notes') // Using simple pref proxy
+
+        if (notify) {
+           const { data: profile } = await supabase.from('profiles').select('first_name').eq('id', user.id).single()
+           const name = profile?.first_name || 'Ton partenaire'
+           
+           await sendNotification({
+             type: 'note', 
+             targetUserId: partnerId,
+             title: 'Humeur du jour 💭',
+             message: `${name} se sent ${moodValue} aujourd'hui.`,
+             data: { type: 'mood' }
+           })
+        }
+      }
+    }
+  } catch (e) {
+    console.error('[upsertMood] Error sending notification:', e)
+  }
+
+  return data
+}

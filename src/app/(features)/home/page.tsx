@@ -3,6 +3,7 @@
 import { BentoGrid, BentoGridItem } from '@/components/home/bento/BentoGrid';
 import EventWidget from '@/components/home/bento/EventWidget';
 import LoveWidget from '@/components/home/bento/LoveWidget';
+import MoodWidget from '@/components/home/mood/MoodWidget';
 import NoteWidget from '@/components/home/bento/NoteWidget';
 import QuickActions from '@/components/home/bento/QuickActions';
 
@@ -86,6 +87,12 @@ export default function HomePage() {
           <BentoGridItem
             className="md:col-span-1 row-span-1 min-h-[140px]"
             header={<EventWidget />}
+          />
+
+          {/* Mood Widget */}
+          <BentoGridItem
+            className="md:col-span-3 row-span-1 min-h-[160px]"
+            header={<MoodWidget />}
           />
 
           {/* Note Widget */}
