@@ -7,6 +7,8 @@ import { getDiscovery, submitSwipe } from "@/lib/actions";
 import { X, Heart, Star } from "lucide-react";
 import Image from "next/image";
 
+import { supabase } from "@/lib/supabase/client";
+
 interface SwipeDeckProps {
   session: any;
   onMatch: (media: any) => void;
@@ -16,6 +18,61 @@ export default function SwipeDeck({ session, onMatch }: SwipeDeckProps) {
   const [cards, setCards] = useState<TMDBMedia[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Get current user ID
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        setCurrentUserId(data.user.id);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!currentUserId || !session?.id) return;
+
+    const channel = supabase
+      .channel(`session-${session.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'match_swipes',
+          filter: `session_id=eq.${session.id}`
+        },
+        async (payload) => {
+          const newSwipe = payload.new;
+          
+          // Ignore my own swipes
+          if (newSwipe.user_id === currentUserId) return;
+
+          // If partner swiped RIGHT, check if I also swiped RIGHT
+          if (newSwipe.direction === 'right') {
+            const { data: mySwipe } = await supabase
+              .from('match_swipes')
+              .select('*')
+              .eq('session_id', session.id)
+              .eq('media_id', newSwipe.media_id)
+              .eq('user_id', currentUserId)
+              .eq('direction', 'right')
+              .maybeSingle();
+
+            if (mySwipe) {
+              // Exact same match logic as server side, but client triggered
+              console.log('Match detected via Realtime!');
+              onMatch(newSwipe.media_data);
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUserId, session?.id, onMatch]);
 
   useEffect(() => {
     loadCards();

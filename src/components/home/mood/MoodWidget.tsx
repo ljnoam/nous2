@@ -30,26 +30,30 @@ export default function MoodWidget() {
         const uid = session.user.id;
         if (mounted) setCurrentUserId(uid);
 
-        // Fetch today's moods
-        const today = new Date().toISOString().split('T')[0];
-        const { data: moods, error } = await supabase
-          .from('daily_moods')
-          .select('user_id, mood_value')
-          .eq('mood_date', today);
+        const fetchMoods = async () => {
+          const today = new Date().toISOString().split('T')[0];
+          const { data: moods, error } = await supabase
+            .from('daily_moods')
+            .select('user_id, mood_value')
+            .eq('mood_date', today);
 
-        if (error) {
-          console.error('Error fetching moods:', error);
-        } else if (moods) {
-          const myEntry = moods.find(m => m.user_id === uid);
-          const partnerEntry = moods.find(m => m.user_id !== uid);
-          if (mounted) {
+          if (error) {
+            console.error('Error fetching moods:', error);
+          } else if (moods && mounted) {
+            const myEntry = moods.find(m => m.user_id === uid);
+            const partnerEntry = moods.find(m => m.user_id !== uid);
+            
             setMyMood(myEntry?.mood_value || null);
             setPartnerMood(partnerEntry?.mood_value || null);
             setLoading(false);
           }
-        }
+        };
+
+        // Initial fetch
+        await fetchMoods();
 
         // Subscribe to Realtime
+        const today = new Date().toISOString().split('T')[0];
         const channel = supabase
           .channel(channelName)
           .on(
@@ -58,19 +62,11 @@ export default function MoodWidget() {
               event: '*',
               schema: 'public',
               table: 'daily_moods',
-              filter: `mood_date=eq.${today}` // Only listen for changes on today's rows
+              filter: `mood_date=eq.${today}`
             },
-            (payload: RealtimePostgresChangesPayload<MoodData>) => {
-              // Ensure we only process if it's relevant (RLS should filter, but double check)
-              // Insert or Update
-              if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-                const newRecord = payload.new as MoodData;
-                if (newRecord.user_id === uid) {
-                   setMyMood(newRecord.mood_value);
-                } else {
-                   setPartnerMood(newRecord.mood_value);
-                }
-              }
+            () => {
+              // On any change, just re-fetch to be safe and simple
+              fetchMoods();
             }
           )
           .subscribe();

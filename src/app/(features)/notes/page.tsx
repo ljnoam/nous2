@@ -151,7 +151,7 @@ export default function NotesPage() {
 
       <main 
         style={containerStyle}
-        className="relative z-10 h-[100dvh] overflow-y-auto pb-24 px-3 pt-[calc(env(safe-area-inset-top)+var(--gap))] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']"
+        className="relative z-10 min-h-screen pb-20 px-3 pt-[calc(env(safe-area-inset-top)+var(--gap))]"
       >
         <div className="max-w-6xl mx-auto space-y-6">
           
