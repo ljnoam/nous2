@@ -17,3 +17,14 @@ export type BucketItem = {
   is_completed: boolean
   created_by: string
 }
+
+export type Expense = {
+  id: string
+  created_at: string
+  amount: number
+  description: string
+  type: 'shared' | 'reimbursement'
+  paid_by: string
+  couple_id: string
+  is_settled: boolean
+}

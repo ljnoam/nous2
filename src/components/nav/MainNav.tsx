@@ -5,7 +5,8 @@ import {
     Home,
     Image,
     NotebookPen,
-    ListTodo
+    ListTodo,
+    Wallet
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -22,6 +23,7 @@ type Item = {
 const NAV_ITEMS: Item[] = [
   { href: '/home',     label: 'Home',   icon: Home },
   { href: '/notes',    label: 'Notes',  icon: NotebookPen },
+  { href: '/expenses', label: 'Dépenses', icon: Wallet },
   { href: '/bucket',   label: 'Listes', icon: ListTodo },
   { href: '/albums',   label: 'Albums', icon: Image },
   { href: '/calendar', label: 'Agenda', icon: CalendarIcon },

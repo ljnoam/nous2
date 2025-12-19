@@ -537,10 +537,65 @@ export async function getDiscovery(
 
   const data = await fetchTMDB(endpoint, params);
   
-  if (!data?.results) return [];
-
   return data.results.map((item: any) => ({
     ...item,
     media_type: type, 
   }));
+}
+
+export async function createExpense(data: { amount: number, description: string, couple_id: string, type: 'shared'|'reimbursement' }) {
+  const supabase = await getSupabase()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  // 1. Create Expense
+  const { data: expense, error } = await supabase
+    .from('expenses')
+    .insert({
+      amount: data.amount,
+      description: data.description,
+      type: data.type,
+      couple_id: data.couple_id,
+      paid_by: user.id,
+      is_settled: false
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+
+  // 2. Notify Partner
+  try {
+    const partnerId = await getPartnerId(supabase, user.id, data.couple_id)
+    if (partnerId) {
+      // Assuming we use 'notify_notes' preference or similar, or just always send for expenses as it's important
+      // User didn't specify a preference toggle for expenses, so let's check a generic one or default true.
+      // Let's reuse 'notify_notes' for now or just assume valid since it's money.
+      // Actually, checking 'notify_notes' is safe practice.
+      const notify = await shouldNotify(supabase, partnerId, 'notify_notes') 
+      
+      if (notify) {
+        const { data: profile } = await supabase.from('profiles').select('first_name').eq('id', user.id).single()
+        const name = profile?.first_name || 'Ton partenaire'
+        
+        const emoji = data.type === 'reimbursement' ? '💸' : '🧾'
+        const title = data.type === 'reimbursement' ? 'Remboursement reçu' : 'Nouvelle dépense'
+        const msg = data.type === 'reimbursement' 
+            ? `${name} t'a remboursé ${data.amount}€`
+            : `${name} a ajouté une dépense de ${data.amount}€ pour ${data.description}`
+
+        await sendNotification({
+          type: 'note', // reusing type for now or add 'expense' to types definition if strict
+          targetUserId: partnerId,
+          title: `${title} ${emoji}`,
+          message: msg,
+          data: { expenseId: expense.id, coupleId: data.couple_id }
+        })
+      }
+    }
+  } catch (e) {
+    console.error('[createExpense] Error sending notification:', e)
+  }
+
+  return expense
 }
