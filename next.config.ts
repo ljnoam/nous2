@@ -1,6 +1,6 @@
 // next.config.ts (ESM)
 import type { NextConfig } from 'next'
-import withPWA from 'next-pwa'
+
 
 const config: NextConfig = {
   eslint: { ignoreDuringBuilds: true },
@@ -23,11 +23,16 @@ const config: NextConfig = {
 }
 
 // ⚠️ important: disable en dev pour éviter GenerateSW en watch
-export default withPWA({
-  dest: 'public',
+const withPWA = require("@ducanh2912/next-pwa").default({
+  dest: "public",
   register: true,
   skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development',
-  // optionnel mais utile pour éviter d'inclure des artefacts qui perturbent Workbox
-  buildExcludes: [/middleware-manifest\.json$/, /app-build-manifest\.json$/],
-})(config)
+  disable: process.env.NODE_ENV === "development",
+  cacheOnFrontEndNav: true,
+  aggressiveFrontEndNavCaching: true,
+  workboxOptions: {
+    disableDevLogs: true,
+  },
+});
+
+export default withPWA(config);
