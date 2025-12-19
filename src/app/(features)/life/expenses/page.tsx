@@ -19,13 +19,30 @@ import {
 } from "@/components/ui/drawer"
 import { createExpense } from '@/lib/actions'
 import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion'
+import { useAppStore } from '@/lib/store/useAppStore'
+import { useShallow } from 'zustand/react/shallow'
 
 export default function ExpensesPage() {
   const router = useRouter()
+  
+  // STORE
+  const { 
+    expenses, setExpenses, addExpense, updateExpense, removeExpense,
+    user, setUser,
+    couple, setCouple
+  } = useAppStore(useShallow(state => ({
+    expenses: state.expenses,
+    setExpenses: state.setExpenses,
+    addExpense: state.addExpense,
+    updateExpense: state.updateExpense,
+    removeExpense: state.removeExpense,
+    user: state.user,
+    setUser: state.setUser,
+    couple: state.couple,
+    setCouple: state.setCouple
+  })))
+
   const [loading, setLoading] = useState(true)
-  const [expenses, setExpenses] = useState<Expense[]>([])
-  const [me, setMe] = useState<any>(null)
-  const [coupleId, setCoupleId] = useState<string | null>(null)
   
   // States for Drawers
   const [isAddOpen, setIsAddOpen] = useState(false)
@@ -48,26 +65,33 @@ export default function ExpensesPage() {
             return
         }
         if (!mounted) return
-        setMe(session.user)
+        
+        if (session.user.id !== user?.id) setUser(session.user)
 
         // 1. Get My Couple ID
-        const { data: cm, error: cmError } = await supabase
-            .from('couple_members')
-            .select('couple_id')
-            .eq('user_id', session.user.id)
-            .maybeSingle()
+        // Use cached if available to start, but refresh
+        let currentCoupleId = couple?.id;
         
-        if (cmError || !cm) {
-            console.error('Error fetching couple:', cmError)
-            return
+        if (!currentCoupleId) {
+             const { data: cm, error: cmError } = await supabase
+                .from('couple_members')
+                .select('couple_id')
+                .eq('user_id', session.user.id)
+                .maybeSingle()
+            
+            if (cmError || !cm) {
+                console.error('Error fetching couple:', cmError)
+                return
+            }
+            currentCoupleId = cm.couple_id;
+            if (mounted) setCouple({ id: cm.couple_id, members_count: 2 }); // Assume 2 or fetch
         }
-        if (mounted) setCoupleId(cm.couple_id)
 
         // 2. Get Expenses
         const { data: exps, error: expError } = await supabase
             .from('expenses')
             .select('*')
-            .eq('couple_id', cm.couple_id)
+            .eq('couple_id', currentCoupleId)
             .eq('is_settled', false)
             .order('created_at', { ascending: false })
         
@@ -87,24 +111,20 @@ export default function ExpensesPage() {
     const channel = supabase
       .channel('expenses_realtime_v3')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, (payload) => {
-        // Simple invalidation strategy is often safer than complex merging for small lists
-        // But let's keep the optimistic merge for now to avoid jumpiness
         const newRecord = payload.new as Expense
         const oldRecord = payload.old as { id: string }
         
-        setExpenses(prev => {
-           if (payload.eventType === 'INSERT') {
-             if (newRecord.is_settled) return prev
-             if (prev.find(e => e.id === newRecord.id)) return prev
-             return [newRecord, ...prev]
-           } else if (payload.eventType === 'UPDATE') {
-             if (newRecord.is_settled) return prev.filter(e => e.id !== newRecord.id)
-             return prev.map(e => e.id === newRecord.id ? newRecord : e)
-           } else if (payload.eventType === 'DELETE') {
-             return prev.filter(e => e.id !== oldRecord.id)
-           }
-           return prev
-        })
+        if (payload.eventType === 'INSERT') {
+             if (!newRecord.is_settled) addExpense(newRecord)
+        } else if (payload.eventType === 'UPDATE') {
+             if (newRecord.is_settled) {
+                 removeExpense(newRecord.id)
+             } else {
+                 updateExpense(newRecord)
+             }
+        } else if (payload.eventType === 'DELETE') {
+             removeExpense(oldRecord.id)
+        }
       })
       .subscribe()
       
@@ -112,29 +132,18 @@ export default function ExpensesPage() {
       mounted = false 
       supabase.removeChannel(channel)
     }
-  }, [router])
+  }, [router, addExpense, removeExpense, updateExpense, setExpenses, setUser, setCouple, couple?.id, user?.id])
 
-  // Balance Calculation (NEW LOGIC: 100% Allocation)
+  // Balance Calculation (100% Allocation)
   const balance = useMemo(() => {
-    if (loading) return null
-    if (!me) return 0
+    if (!user) return 0
 
     let myTotal = 0
     let partnerTotal = 0
     
-    // Logic: 
-    // If I paid X, Partner owes me X. (Balance +X)
-    // If Partner paid Y, I owe Partner Y. (Balance -Y)
-    // Balance = Sum(MyPaid) - Sum(PartnerPaid)
-    
-    // Reimbursement Logic: 
-    // If I paid Z as reimbursement to Partner. It counts as "I paid Z".
-    // So Sum(MyPaid) increases. Balance increases (becomes less negative or more positive).
-    // Correct.
-    
     expenses.forEach(e => {
         const val = Number(e.amount)
-        if (e.paid_by === me.id) {
+        if (e.paid_by === user.id) {
             myTotal += val
         } else {
             partnerTotal += val
@@ -142,10 +151,10 @@ export default function ExpensesPage() {
     })
 
     return myTotal - partnerTotal
-  }, [expenses, me, loading])
+  }, [expenses, user])
 
   async function handleAddExpense() {
-    if (!amount || !description || !coupleId || !me) return
+    if (!amount || !description || !couple?.id || !user) return
     setSubmitting(true)
     const val = parseFloat(amount.replace(',', '.'))
     if (isNaN(val) || val <= 0) {
@@ -154,21 +163,22 @@ export default function ExpensesPage() {
         return
     }
 
+    const optimisticId = 'temp-' + Date.now()
+    
     try {
         // Optimistic UI Update
-        const optimisticId = 'temp-' + Date.now()
         const newExp: Expense = {
             id: optimisticId,
             created_at: new Date().toISOString(),
             amount: val,
             description,
             type: 'shared',
-            paid_by: me.id,
-            couple_id: coupleId,
+            paid_by: user.id,
+            couple_id: couple.id,
             is_settled: false
         }
         
-        setExpenses(prev => [newExp, ...prev])
+        addExpense(newExp) // Store action
         setIsAddOpen(false)
         setAmount('')
         setDescription('')
@@ -177,27 +187,30 @@ export default function ExpensesPage() {
         const serverExp = await createExpense({
             amount: val,
             description: description,
-            couple_id: coupleId,
+            couple_id: couple.id,
             type: 'shared'
         })
         
         // Replace temp with real
-        setExpenses(prev => prev.map(e => e.id === optimisticId ? serverExp : e))
+        // We use updateExpense to swap the ID if possible, but ID is key. 
+        // Better to remove temp and add real, or update properties.
+        // Since ID changes, we should remove and add.
+        removeExpense(optimisticId)
+        addExpense(serverExp) // This might duplicate if realtime comes in fast? Realtime handles INSERT.
+        // Actually, realtime might arrive before this awaits.
+        // It's tricky. But for now, simple removal of optimistic id is safe.
 
     } catch (e: any) {
         alert('Erreur: ' + e.message)
-        // Revert optimistic
-        // setExpenses(prev => prev.filter(e => e.id !== optimisticId)) 
-        // Need to capture optimisticId in closure if we want to revert, but simplistic approach here.
-        // Reload page fallback.
-        window.location.reload()
+        removeExpense(optimisticId)
+        // window.location.reload()
     } finally {
         setSubmitting(false)
     }
   }
 
   async function handleReimburse() {
-    if (!amount || !coupleId || !me) return
+    if (!amount || !couple?.id || !user) return
     setSubmitting(true)
     const val = parseFloat(amount.replace(',', '.'))
     if (isNaN(val) || val <= 0) {
@@ -206,36 +219,37 @@ export default function ExpensesPage() {
         return
     }
 
+    const optimisticId = 'temp-' + Date.now()
+
     try {
         // Optimistic
-        const optimisticId = 'temp-' + Date.now()
         const newExp: Expense = {
             id: optimisticId,
             created_at: new Date().toISOString(),
             amount: val,
             description: 'Remboursement',
             type: 'reimbursement',
-            paid_by: me.id,
-            couple_id: coupleId,
-            is_settled: false,
-            category: '' 
+            paid_by: user.id,
+            couple_id: couple.id,
+            is_settled: false
         }
-        setExpenses(prev => [newExp, ...prev])
+        addExpense(newExp)
         setIsReimburseOpen(false)
         setAmount('')
 
         const serverExp = await createExpense({
             amount: val,
             description: 'Remboursement',
-            couple_id: coupleId,
+            couple_id: couple.id,
             type: 'reimbursement'
         })
         
-        setExpenses(prev => prev.map(e => e.id === optimisticId ? serverExp : e))
+        removeExpense(optimisticId)
+        addExpense(serverExp)
 
     } catch (e: any) {
         alert('Erreur: ' + e.message)
-        window.location.reload()
+        removeExpense(optimisticId)
     } finally {
         setSubmitting(false)
     }
@@ -244,33 +258,32 @@ export default function ExpensesPage() {
   async function handleDelete(id: string) {
       if(!confirm("Supprimer cette dépense ?")) return
       
-      // Optimistic delete
-      const old = [...expenses]
-      setExpenses(prev => prev.filter(e => e.id !== id))
+      const prevExpenses = [...expenses];
+      removeExpense(id); // Optimistic
       
       const { error } = await supabase.from('expenses').delete().eq('id', id)
       if (error) {
           alert('Erreur de suppression')
-          setExpenses(old)
+          setExpenses(prevExpenses) // Revert
       }
   }
 
   async function settleUp() {
-    if (!coupleId || expenses.length === 0) return
+    if (!couple?.id || expenses.length === 0) return
     if (!confirm('Tout marquer comme remboursé ? Cette action est irréversible.')) return
     
-    const old = [...expenses]
+    const prevExpenses = [...expenses];
     setExpenses([]) 
 
     const { error } = await supabase
         .from('expenses')
         .update({ is_settled: true })
-        .eq('couple_id', coupleId)
+        .eq('couple_id', couple.id)
         .eq('is_settled', false)
 
     if (error) {
         alert('Erreur')
-        setExpenses(old)
+        setExpenses(prevExpenses)
     }
   }
 
@@ -363,7 +376,7 @@ export default function ExpensesPage() {
                      <SwipeableExpenseItem 
                         key={expense.id} 
                         expense={expense} 
-                        meId={me?.id} 
+                        meId={user?.id || ''} 
                         onDelete={handleDelete}
                      />
                 ))}

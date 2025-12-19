@@ -11,20 +11,52 @@ import BlurText from '@/components/ui/BlurText';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import UserAvatar from '@/components/nav/UserAvatar';
+import { useAppStore } from '@/lib/store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
+import AppSkeleton from '@/components/ui/AppSkeleton';
 
 export default function HomePage() {
   const router = useRouter();
-  const [firstName, setFirstName] = useState<string | null>(null);
+  
+  // ZUSTAND STATE
+  const { 
+    firstName, 
+    setFirstName, 
+    _hasHydrated,
+    user, setUser,
+    couple, setCouple
+  } = useAppStore(useShallow(state => ({
+    firstName: state.firstName,
+    setFirstName: state.setFirstName,
+    _hasHydrated: state._hasHydrated,
+    user: state.user,
+    setUser: state.setUser,
+    couple: state.couple,
+    setCouple: state.setCouple
+  })));
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       try {
+        // 1. Auth Check
         const { data: s } = await supabase.auth.getSession();
         if (!s.session) { router.replace('/register'); return; }
         const uid = s.session.user.id;
+        
+        // Update Store User
+        if (s.session.user.id !== user?.id) {
+             setUser(s.session.user);
+        }
 
-        const { data, error } = await supabase
+        // 2. Couple Check (Use local cache first if available?)
+        // Always verify couple status for redirection safety, but non-blocking if we assume valid?
+        // For security/logic correctness, let's fetch.
+        
+        const { data: cData, error } = await supabase
           .from('my_couple_status')
           .select('*')
           .eq('user_id', uid)
@@ -35,38 +67,60 @@ export default function HomePage() {
           return;
         }
 
-        if (!data) { router.replace('/onboarding'); return; }
-        if (data.members_count < 2) { router.replace('/waiting'); return; }
+        if (!cData) { router.replace('/onboarding'); return; }
+        if (cData.members_count < 2) { router.replace('/waiting'); return; }
+        
+        setCouple({ id: cData.couple_id, members_count: cData.members_count });
 
+        // 3. Profile Name
+        // Only fetch if we don't have it or want to refresh? Let's refresh silently
         const { data: prof } = await supabase
           .from('profiles')
           .select('first_name')
           .eq('id', uid)
           .maybeSingle();
-        setFirstName(prof?.first_name ?? null);
+          
+        if (prof?.first_name) {
+             setFirstName(prof.first_name);
+        }
+        
         setLoading(false);
       } catch (e) {
         console.error('HomePage exception:', e);
         setLoading(false);
       }
     })();
-  }, [router]);
+  }, [router, setFirstName, setUser, setCouple, user?.id]);
 
-  if (loading) return null; // Or a loading spinner if preferred
+  // SKELETON: Show if not hydrated (localStorage loading) OR if pure initial load with no cached name
+  // If we have a cached firstName, we show the page immediately (Optimistic/Offline-First)
+  const showSkeleton = !_hasHydrated || (loading && !firstName);
+
+  if (showSkeleton) {
+      return <AppSkeleton />;
+  }
 
   return (
     <>
       <main className="relative z-10 min-h-screen pb-20 px-3 pt-[calc(env(safe-area-inset-top)+12px)] space-y-6">
         
         {/* Header */}
-        <header className="flex flex-col items-center text-center space-y-1">
+        <header className="relative flex items-center justify-center py-2 mb-4">
+           {/* Centered Title */}
           <BlurText
             text={`Bonjour ${firstName || 'toi'} ❤️`}
-            className="text-3xl font-bold tracking-tight text-neutral-900 dark:text-white"
+            className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white"
             delay={50}
             animateBy="words"
             direction="top"
           />
+          
+          {/* Profile Icon Top Right */}
+          <div className="absolute right-0 top-1/2 -translate-y-1/2">
+             <Link href="/profile" className="block p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition">
+                <UserAvatar size={36} />
+             </Link>
+          </div>
         </header>
 
         {/* Bento Grid */}

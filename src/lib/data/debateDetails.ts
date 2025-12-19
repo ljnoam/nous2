@@ -1,0 +1,296 @@
+// Data Models
+export enum DebateCategory {
+  COUPLES = "Couples",
+  PHILOSOPHY = "Philosophie",
+  DILEMMA = "Dilemmes",
+  SPICY = "Coquin",
+  ABSURD = "Absurde",
+}
+
+export enum DebateTarget {
+  ALL = "Débat ouvert",
+  HIM = "Pour Lui",
+  HER = "Pour Elle",
+  COUPLE = "Pour les Deux",
+}
+
+export interface DebateTopic {
+  id: string;
+  category: DebateCategory;
+  text: string;
+  target: DebateTarget;
+}
+
+// Static Data Store
+const DEBATE_QUESTIONS: DebateTopic[] = [
+  // COUPLES
+  { id: 'c1', category: DebateCategory.COUPLES, text: "Est-ce que l'un de nous est 'le chef' dans la relation ?", target: DebateTarget.COUPLE },
+  { id: 'c2', category: DebateCategory.COUPLES, text: "Si on gagnait au loto, qu'est-ce qu'on changerait en premier ?", target: DebateTarget.COUPLE },
+  { id: 'c3', category: DebateCategory.COUPLES, text: "Quelle est notre plus grande force en tant que couple ?", target: DebateTarget.COUPLE },
+  { id: 'c4', category: DebateCategory.COUPLES, text: "Si tu pouvais changer une habitude chez moi, laquelle serait-ce ?", target: DebateTarget.COUPLE },
+  { id: 'c5', category: DebateCategory.COUPLES, text: "Est-ce qu'on passe trop ou pas assez de temps ensemble ?", target: DebateTarget.COUPLE },
+  { id: 'c6', category: DebateCategory.COUPLES, text: "Qui est le plus romantique des deux ?", target: DebateTarget.ALL },
+
+  // PHILOSOPHY
+  { id: 'p1', category: DebateCategory.PHILOSOPHY, text: "L'argent fait-il vraiment le bonheur ?", target: DebateTarget.ALL },
+  { id: 'p2', category: DebateCategory.PHILOSOPHY, text: "Est-ce que le destin existe ou on contrôle tout ?", target: DebateTarget.ALL },
+  { id: 'p3', category: DebateCategory.PHILOSOPHY, text: "La vérité est-elle toujours bonne à dire ?", target: DebateTarget.ALL },
+  { id: 'p4', category: DebateCategory.PHILOSOPHY, text: "Si tu pouvais vivre éternellement, le ferais-tu ?", target: DebateTarget.ALL },
+  { id: 'p5', category: DebateCategory.PHILOSOPHY, text: "L'intelligence artificielle est-elle un danger ?", target: DebateTarget.ALL },
+  { id: 'p6', category: DebateCategory.PHILOSOPHY, text: "Est-ce que l'humain est naturellement bon ?", target: DebateTarget.ALL },
+
+  // DILEMMA
+  { id: 'd1', category: DebateCategory.DILEMMA, text: "Préfères-tu savoir quand tu vas mourir ou comment ?", target: DebateTarget.ALL },
+  { id: 'd2', category: DebateCategory.DILEMMA, text: "Être riche et seul ou pauvre et très entouré ?", target: DebateTarget.ALL },
+  { id: 'd3', category: DebateCategory.DILEMMA, text: "Ne plus jamais avoir accès à Internet ou ne plus jamais voyager ?", target: DebateTarget.ALL },
+  { id: 'd4', category: DebateCategory.DILEMMA, text: "Pouvoir parler toutes les langues ou savoir jouer de tous les instruments ?", target: DebateTarget.ALL },
+  { id: 'd5', category: DebateCategory.DILEMMA, text: "Toujours dire ce que tu penses ou ne jamais pouvoir parler ?", target: DebateTarget.ALL },
+  { id: 'd6', category: DebateCategory.DILEMMA, text: "Avoir le pouvoir de voler ou d'être invisible ?", target: DebateTarget.ALL },
+
+  // SPICY
+  { id: 's1', category: DebateCategory.SPICY, text: "Quel est ton fantasme inavoué ?", target: DebateTarget.COUPLE },
+  { id: 's2', category: DebateCategory.SPICY, text: "Quel est l'endroit le plus insolite où tu aimerais le faire ?", target: DebateTarget.COUPLE },
+  { id: 's3', category: DebateCategory.SPICY, text: "Quelle partie de mon corps préfères-tu ?", target: DebateTarget.COUPLE },
+  { id: 's4', category: DebateCategory.SPICY, text: "Quelle tenue me rend irrésistible ?", target: DebateTarget.COUPLE },
+  { id: 's5', category: DebateCategory.SPICY, text: "Un souvenir sexy qui t'a marqué ?", target: DebateTarget.COUPLE },
+  { id: 's6', category: DebateCategory.SPICY, text: "Plutôt matin ou soir ?", target: DebateTarget.ALL },
+
+  // ABSURD
+  { id: 'a1', category: DebateCategory.ABSURD, text: "Si les animaux pouvaient parler, lequel serait le plus impoli ?", target: DebateTarget.ALL },
+  { id: 'a2', category: DebateCategory.ABSURD, text: "Un hot-dog est-il un sandwich ?", target: DebateTarget.ALL },
+  { id: 'a3', category: DebateCategory.ABSURD, text: "Combien de poules faudrait-il pour tuer un lion ?", target: DebateTarget.ALL },
+  { id: 'a4', category: DebateCategory.ABSURD, text: "Si tu devais te battre contre 100 chevaux taille canard ou 1 canard taille cheval ?", target: DebateTarget.ALL },
+  { id: 'a5', category: DebateCategory.ABSURD, text: "L'ananas sur la pizza : crime ou génie ?", target: DebateTarget.ALL },
+  { id: 'a6', category: DebateCategory.ABSURD, text: "Pourquoi on appuie plus fort sur la télécommande quand les piles sont mortes ?", target: DebateTarget.ALL },
+
+  // NEW QUESTIONS
+  { id: 'gen_1', category: DebateCategory.COUPLES, text: "Est-ce une bonne idée d'avoir les mots de passe de l'autre ?", target: DebateTarget.COUPLE },
+  { id: 'gen_2', category: DebateCategory.COUPLES, text: "Quelle est la chose que je fais qui te fait te sentir le plus aimé(e) ?", target: DebateTarget.HER },
+  { id: 'gen_3', category: DebateCategory.COUPLES, text: "Penses-tu qu'il faut tout se dire, même les petites pensées blessantes ?", target: DebateTarget.COUPLE },
+  { id: 'gen_4', category: DebateCategory.COUPLES, text: "Quelle est ta plus grande peur concernant notre avenir ?", target: DebateTarget.HIM },
+  { id: 'gen_5', category: DebateCategory.COUPLES, text: "Compte commun ou comptes séparés : quelle est la meilleure stratégie ?", target: DebateTarget.COUPLE },
+  { id: 'gen_6', category: DebateCategory.COUPLES, text: "Peut-on vraiment rester ami avec ses ex sans arrière-pensée ?", target: DebateTarget.ALL },
+  { id: 'gen_7', category: DebateCategory.COUPLES, text: "Si tu devais changer une seule chose dans notre dynamique, ce serait quoi ?", target: DebateTarget.COUPLE },
+  { id: 'gen_8', category: DebateCategory.COUPLES, text: "Est-ce que tu te considères plus comme ton père ou ta mère en amour ?", target: DebateTarget.HIM },
+  { id: 'gen_9', category: DebateCategory.COUPLES, text: "À partir de quel moment le flirt devient-il de la tromperie ?", target: DebateTarget.COUPLE },
+  { id: 'gen_10', category: DebateCategory.COUPLES, text: "Quelle est la concession la plus difficile que tu aies faite pour nous ?", target: DebateTarget.HER },
+  { id: 'gen_11', category: DebateCategory.PHILOSOPHY, text: "L'argent offre-t-il la liberté ou crée-t-il de nouvelles chaînes ?", target: DebateTarget.ALL },
+  { id: 'gen_12', category: DebateCategory.PHILOSOPHY, text: "Vaut-il mieux être respecté ou être aimé ?", target: DebateTarget.COUPLE },
+  { id: 'gen_13', category: DebateCategory.PHILOSOPHY, text: "Si on pouvait télécharger ta conscience dans un robot, serait-ce toujours 'toi' ?", target: DebateTarget.ALL },
+  { id: 'gen_14', category: DebateCategory.PHILOSOPHY, text: "Le mensonge peut-il parfois être plus moral que la vérité ?", target: DebateTarget.ALL },
+  { id: 'gen_15', category: DebateCategory.PHILOSOPHY, text: "L'art doit-il être beau ou doit-il choquer ?", target: DebateTarget.ALL },
+  { id: 'gen_16', category: DebateCategory.PHILOSOPHY, text: "Sommes-nous le produit de notre éducation ou de notre nature ?", target: DebateTarget.COUPLE },
+  { id: 'gen_17', category: DebateCategory.PHILOSOPHY, text: "Si tu pouvais connaître la date exacte de ta mort, voudrais-tu la savoir ?", target: DebateTarget.HIM },
+  { id: 'gen_18', category: DebateCategory.PHILOSOPHY, text: "L'altruisme pur existe-t-il, ou tout acte de bonté est-il égoïste ?", target: DebateTarget.HER },
+  { id: 'gen_19', category: DebateCategory.PHILOSOPHY, text: "Est-ce que la souffrance est nécessaire pour devenir une meilleure personne ?", target: DebateTarget.ALL },
+  { id: 'gen_20', category: DebateCategory.PHILOSOPHY, text: "La nostalgie est-elle un sentiment positif ou un frein au bonheur ?", target: DebateTarget.ALL },
+  { id: 'gen_21', category: DebateCategory.DILEMMA, text: "Vivre une vie de rêve mais mourir dans 10 ans, ou une vie ennuyeuse jusqu'à 100 ans ?", target: DebateTarget.COUPLE },
+  { id: 'gen_22', category: DebateCategory.DILEMMA, text: "Tu préfères avoir le pouvoir de voler ou d'être invisible ?", target: DebateTarget.ALL },
+  { id: 'gen_23', category: DebateCategory.DILEMMA, text: "Sauver 1 humain inconnu ou 100 chiots mignons ?", target: DebateTarget.HER },
+  { id: 'gen_24', category: DebateCategory.DILEMMA, text: "Être le couple le plus riche du monde mais sans amis, ou classe moyenne très entourée ?", target: DebateTarget.COUPLE },
+  { id: 'gen_25', category: DebateCategory.DILEMMA, text: "Ne plus jamais pouvoir parler ou ne plus jamais pouvoir entendre ?", target: DebateTarget.HIM },
+  { id: 'gen_26', category: DebateCategory.DILEMMA, text: "Revivre notre première rencontre en boucle (façon Un jour sans fin) ou l'oublier totalement ?", target: DebateTarget.COUPLE },
+  { id: 'gen_27', category: DebateCategory.DILEMMA, text: "Avoir accès à tout le savoir de l'univers ou avoir la paix intérieure absolue ?", target: DebateTarget.ALL },
+  { id: 'gen_28', category: DebateCategory.DILEMMA, text: "Être un génie dans un monde d'idiots ou un idiot dans un monde de génies ?", target: DebateTarget.ALL },
+  { id: 'gen_29', category: DebateCategory.DILEMMA, text: "Tu préfères que je sois 20% plus intelligent(e) ou 20% plus attirant(e) ?", target: DebateTarget.COUPLE },
+  { id: 'gen_30', category: DebateCategory.DILEMMA, text: "Arrêter le changement climatique instantanément ou éradiquer la faim dans le monde ?", target: DebateTarget.ALL },
+  { id: 'gen_31', category: DebateCategory.SPICY, text: "Lumière allumée ou lumière éteinte ?", target: DebateTarget.COUPLE },
+  { id: 'gen_32', category: DebateCategory.SPICY, text: "Quelle est la chose la plus sexy que je fasse sans m'en rendre compte ?", target: DebateTarget.HIM },
+  { id: 'gen_33', category: DebateCategory.SPICY, text: "Est-ce que regarder du contenu adulte ensemble est un 'oui' ou un 'non' ?", target: DebateTarget.COUPLE },
+  { id: 'gen_34', category: DebateCategory.SPICY, text: "Quelle partie de mon corps préfères-tu ?", target: DebateTarget.HER },
+  { id: 'gen_35', category: DebateCategory.SPICY, text: "Spontanéité ou anticipation : qu'est-ce qui t'excite le plus ?", target: DebateTarget.COUPLE },
+  { id: 'gen_36', category: DebateCategory.SPICY, text: "As-tu un fantasme que tu n'as jamais osé m'avouer ?", target: DebateTarget.HIM },
+  { id: 'gen_37', category: DebateCategory.SPICY, text: "Le sexting : essentiel ou gênant ?", target: DebateTarget.ALL },
+  { id: 'gen_38', category: DebateCategory.SPICY, text: "Quel est le 'tue-l'amour' absolu au lit pour toi ?", target: DebateTarget.HER },
+  { id: 'gen_39', category: DebateCategory.SPICY, text: "Est-ce que la lingerie a vraiment de l'importance ?", target: DebateTarget.HIM },
+  { id: 'gen_40', category: DebateCategory.SPICY, text: "À quel endroit insolite aimerais-tu qu'on le fasse ?", target: DebateTarget.COUPLE },
+  { id: 'gen_41', category: DebateCategory.ABSURD, text: "Un hot-dog est-il techniquement un sandwich ?", target: DebateTarget.ALL },
+  { id: 'gen_42', category: DebateCategory.ABSURD, text: "Si on devait braquer une banque, qui se ferait arrêter en premier ?", target: DebateTarget.COUPLE },
+  { id: 'gen_43', category: DebateCategory.ABSURD, text: "Tu préfères te battre contre un canard de la taille d'un cheval ou 100 chevaux de la taille d'un canard ?", target: DebateTarget.ALL },
+  { id: 'gen_44', category: DebateCategory.ABSURD, text: "L'ananas sur la pizza : crime contre l'humanité ou génie culinaire ?", target: DebateTarget.ALL },
+  { id: 'gen_45', category: DebateCategory.ABSURD, text: "Qui survivrait le plus longtemps dans une apocalypse zombie ?", target: DebateTarget.COUPLE },
+  { id: 'gen_46', category: DebateCategory.ABSURD, text: "Les céréales : on met le lait avant ou après ?", target: DebateTarget.ALL },
+  { id: 'gen_47', category: DebateCategory.ABSURD, text: "Si les animaux pouvaient parler, lequel serait le plus malpoli ?", target: DebateTarget.ALL },
+  { id: 'gen_48', category: DebateCategory.ABSURD, text: "Si tu devais manger une seule couleur d'aliments pour le reste de ta vie, laquelle ?", target: DebateTarget.HIM },
+  { id: 'gen_49', category: DebateCategory.ABSURD, text: "Une paille a-t-elle un seul trou ou deux trous ?", target: DebateTarget.HER },
+  { id: 'gen_50', category: DebateCategory.ABSURD, text: "Est-ce qu'on s'essuie assis ou debout aux toilettes ? (Le débat interdit)", target: DebateTarget.ALL },
+  // BATCH 2
+  { id: 'gen_51', category: DebateCategory.DILEMMA, text: "Tu préfères que je sois brutalement honnête tout le temps ou que je te mente pour te protéger ?", target: DebateTarget.COUPLE },
+  { id: 'gen_52', category: DebateCategory.DILEMMA, text: "Gagner 10 millions d'euros mais on ne peut plus jamais se toucher, ou rester comme on est ?", target: DebateTarget.COUPLE },
+  { id: 'gen_53', category: DebateCategory.SPICY, text: "Faire l'amour : Le matin au réveil ou le soir pour décompresser ?", target: DebateTarget.COUPLE },
+  { id: 'gen_54', category: DebateCategory.SPICY, text: "Quelle tenue me rend irrésistible à tes yeux ?", target: DebateTarget.HIM },
+  { id: 'gen_55', category: DebateCategory.DILEMMA, text: "Tu préfères être le/la plus drôle de la pièce ou le/la plus intelligent(e) ?", target: DebateTarget.ALL },
+  { id: 'gen_56', category: DebateCategory.SPICY, text: "Le 'Dirty Talk' pendant l'acte : excitant ou gênant ?", target: DebateTarget.COUPLE },
+  { id: 'gen_57', category: DebateCategory.DILEMMA, text: "Avoir le pouvoir de remonter le temps (sans changer l'avenir) ou de voir le futur ?", target: DebateTarget.ALL },
+  { id: 'gen_58', category: DebateCategory.SPICY, text: "Dominer ou être dominé(e) ?", target: DebateTarget.COUPLE },
+  { id: 'gen_59', category: DebateCategory.COUPLES, text: "Est-ce que tu pardonnerais une infidélité purement physique (un coup d'un soir) ?", target: DebateTarget.COUPLE },
+  { id: 'gen_60', category: DebateCategory.DILEMMA, text: "Perdre tous tes souvenirs passés ou ne plus jamais pouvoir en créer de nouveaux ?", target: DebateTarget.ALL },
+  { id: 'gen_61', category: DebateCategory.SPICY, text: "Si nous devions réaliser un jeu de rôle, quel serait ton scénario ?", target: DebateTarget.HIM },
+  { id: 'gen_62', category: DebateCategory.SPICY, text: "Préfères-tu un 'coup rapide' intense ou une longue session sensuelle ?", target: DebateTarget.HER },
+  { id: 'gen_63', category: DebateCategory.ABSURD, text: "Tu préfères avoir des mains à la place des pieds ou des pieds à la place des mains ?", target: DebateTarget.ALL },
+  { id: 'gen_64', category: DebateCategory.DILEMMA, text: "Être coincé(e) sur une île déserte avec ton ex ou avec ton pire ennemi ?", target: DebateTarget.ALL },
+  { id: 'gen_65', category: DebateCategory.SPICY, text: "L'abstinence avant le mariage : noble ou dépassé ?", target: DebateTarget.ALL },
+  { id: 'gen_66', category: DebateCategory.DILEMMA, text: "Tu préfères toujours devoir dire tout ce que tu penses ou ne plus jamais pouvoir parler ?", target: DebateTarget.ALL },
+  { id: 'gen_67', category: DebateCategory.SPICY, text: "Quelle est la zone la plus érogène de mon corps selon toi ?", target: DebateTarget.COUPLE },
+  { id: 'gen_68', category: DebateCategory.COUPLES, text: "Partir en vacances chacun de son côté : sain ou dangereux pour le couple ?", target: DebateTarget.COUPLE },
+  { id: 'gen_69', category: DebateCategory.DILEMMA, text: "Vivre sans internet ou vivre sans eau chaude ?", target: DebateTarget.ALL },
+  { id: 'gen_70', category: DebateCategory.SPICY, text: "Les yeux bandés : tu as confiance ou ça t'angoisse ?", target: DebateTarget.HER },
+  { id: 'gen_71', category: DebateCategory.SPICY, text: "Un plan à trois : fantasme absolu ou cauchemar de jalousie ?", target: DebateTarget.COUPLE },
+  { id: 'gen_72', category: DebateCategory.PHILOSOPHY, text: "Le destin existe-t-il ou tout est-il hasard ?", target: DebateTarget.ALL },
+  { id: 'gen_73', category: DebateCategory.DILEMMA, text: "Savoir quand tu vas mourir ou savoir comment tu vas mourir ?", target: DebateTarget.HIM },
+  { id: 'gen_74', category: DebateCategory.SPICY, text: "Faire l'amour dans un lieu public (risque d'être vus) : excitant ou non ?", target: DebateTarget.COUPLE },
+  { id: 'gen_75', category: DebateCategory.ABSURD, text: "La tomate : fruit ou légume ? (Légalement vs Botaniquement)", target: DebateTarget.ALL },
+  { id: 'gen_76', category: DebateCategory.DILEMMA, text: "Avoir un chef horrible mais un salaire énorme, ou un super chef mais un salaire médiocre ?", target: DebateTarget.ALL },
+  { id: 'gen_77', category: DebateCategory.SPICY, text: "Est-ce que je fais assez de bruit au lit ou préfères-tu le silence ?", target: DebateTarget.HIM },
+  { id: 'gen_78', category: DebateCategory.SPICY, text: "Massage intégral : tu donnes ou tu reçois ?", target: DebateTarget.COUPLE },
+  { id: 'gen_79', category: DebateCategory.COUPLES, text: "Si je prends beaucoup de poids, est-ce que tu m'aimeras toujours autant ?", target: DebateTarget.COUPLE },
+  { id: 'gen_80', category: DebateCategory.DILEMMA, text: "Tu préfères que personne ne vienne à ton mariage ou que personne ne vienne à ton enterrement ?", target: DebateTarget.ALL },
+  { id: 'gen_81', category: DebateCategory.DILEMMA, text: "Être capable de parler toutes les langues ou savoir jouer de tous les instruments ?", target: DebateTarget.ALL },
+  { id: 'gen_82', category: DebateCategory.SPICY, text: "L'épilation : C'est important pour toi ou tu t'en fiches ?", target: DebateTarget.HIM },
+  { id: 'gen_83', category: DebateCategory.SPICY, text: "Quelle scène de film t'a le plus excité(e) dans ta vie ?", target: DebateTarget.HER },
+  { id: 'gen_84', category: DebateCategory.COUPLES, text: "Qui porte le plus la culotte dans notre relation ?", target: DebateTarget.COUPLE },
+  { id: 'gen_85', category: DebateCategory.DILEMMA, text: "Passer un an en prison ou un an dans le coma ?", target: DebateTarget.HIM },
+  { id: 'gen_86', category: DebateCategory.SPICY, text: "Les jouets coquins : Un 'plus' nécessaire ou une concurrence déloyale ?", target: DebateTarget.COUPLE },
+  { id: 'gen_87', category: DebateCategory.DILEMMA, text: "Manger uniquement ta nourriture préférée à vie ou ne plus jamais pouvoir la manger ?", target: DebateTarget.ALL },
+  { id: 'gen_88', category: DebateCategory.SPICY, text: "Tu préfères les préliminaires longs ou passer direct à l'action ?", target: DebateTarget.HER },
+  { id: 'gen_89', category: DebateCategory.ABSURD, text: "Si tu étais un appareil électroménager, lequel serais-tu ?", target: DebateTarget.ALL },
+  { id: 'gen_90', category: DebateCategory.DILEMMA, text: "Tu préfères avoir 50% de chance de gagner 1M€ ou 100% de chance de gagner 50k€ ?", target: DebateTarget.COUPLE },
+  { id: 'gen_91', category: DebateCategory.SPICY, text: "Se filmer pendant l'acte : pour ou contre ?", target: DebateTarget.COUPLE },
+  { id: 'gen_92', category: DebateCategory.PHILOSOPHY, text: "La beauté est-elle objective ou totalement subjective ?", target: DebateTarget.ALL },
+  { id: 'gen_93', category: DebateCategory.DILEMMA, text: "Avoir un enfant ultra intelligent mais méchant, ou un enfant un peu lent mais adorable ?", target: DebateTarget.COUPLE },
+  { id: 'gen_94', category: DebateCategory.SPICY, text: "La douche à deux : Moment romantique ou logistique compliquée ?", target: DebateTarget.COUPLE },
+  { id: 'gen_95', category: DebateCategory.SPICY, text: "Avoir un orgasme à chaque fois mais sans amour, ou faire l'amour avec amour mais sans orgasme ?", target: DebateTarget.HER },
+  { id: 'gen_96', category: DebateCategory.COUPLES, text: "Pour les grandes décisions, on suit la logique ou l'intuition ?", target: DebateTarget.COUPLE },
+  { id: 'gen_97', category: DebateCategory.DILEMMA, text: "Tu préfères être un vampire ou un loup-garou ?", target: DebateTarget.ALL },
+  { id: 'gen_98', category: DebateCategory.SPICY, text: "La fellation/le cunnilingus : Plaisir de donner ou corvée ?", target: DebateTarget.COUPLE },
+  { id: 'gen_99', category: DebateCategory.DILEMMA, text: "Rencontrer tes ancêtres ou rencontrer tes arrière-petits-enfants ?", target: DebateTarget.ALL },
+  { id: 'gen_100', category: DebateCategory.SPICY, text: "Quel est le tue-l'amour vestimentaire absolu chez un homme ?", target: DebateTarget.HER },
+  { id: 'gen_101', category: DebateCategory.DILEMMA, text: "Vivre dans une maison hantée ou vivre dans la rue ?", target: DebateTarget.ALL },
+  { id: 'gen_102', category: DebateCategory.SPICY, text: "As-tu déjà simulé ? (Promis, je ne me fâche pas)", target: DebateTarget.COUPLE },
+  { id: 'gen_103', category: DebateCategory.COUPLES, text: "Si on gagne au loto, le dit-on à notre famille ou garde-t-on le secret ?", target: DebateTarget.COUPLE },
+  { id: 'gen_104', category: DebateCategory.DILEMMA, text: "Tu préfères avoir mauvaise haleine tout le temps ou sentir fort des pieds tout le temps ?", target: DebateTarget.ALL },
+  { id: 'gen_105', category: DebateCategory.SPICY, text: "Préfères-tu que je sois entreprenant(e) ou que tu me chasses ?", target: DebateTarget.COUPLE },
+  { id: 'gen_106', category: DebateCategory.ABSURD, text: "Si tu pouvais parler à une espèce animale, laquelle choisirais-tu ?", target: DebateTarget.ALL },
+  { id: 'gen_107', category: DebateCategory.DILEMMA, text: "Avoir le hoquet pour le reste de ta vie ou avoir la sensation d'éternuer sans que ça sorte ?", target: DebateTarget.ALL },
+  { id: 'gen_108', category: DebateCategory.SPICY, text: "Une nuit dans un hôtel de luxe ou une nuit à la belle étoile ?", target: DebateTarget.COUPLE },
+  { id: 'gen_109', category: DebateCategory.SPICY, text: "La porte de derrière : Curiosité, Zone Interdite ou Autoroute du plaisir ?", target: DebateTarget.COUPLE },
+  { id: 'gen_110', category: DebateCategory.COUPLES, text: "Est-ce qu'on s'embrasse assez souvent (hors sexe) ?", target: DebateTarget.COUPLE },
+  { id: 'gen_111', category: DebateCategory.DILEMMA, text: "Tu préfères être chauve ou avoir une coupe mulet à vie ?", target: DebateTarget.HIM },
+  { id: 'gen_112', category: DebateCategory.SPICY, text: "Miroir au plafond : narcissique ou excitant ?", target: DebateTarget.ALL },
+  { id: 'gen_113', category: DebateCategory.DILEMMA, text: "Contrôler le feu ou contrôler l'eau ?", target: DebateTarget.ALL },
+  { id: 'gen_114', category: DebateCategory.SPICY, text: "Le sexe par téléphone/visio : ça marche pour toi ou pas du tout ?", target: DebateTarget.COUPLE },
+  { id: 'gen_115', category: DebateCategory.PHILOSOPHY, text: "Est-ce que l'homme est naturellement bon ?", target: DebateTarget.ALL },
+  { id: 'gen_116', category: DebateCategory.DILEMMA, text: "Sauver 5 inconnus ou sauver ton animal de compagnie ?", target: DebateTarget.COUPLE },
+  { id: 'gen_117', category: DebateCategory.SPICY, text: "Qu'est-ce qui t'a attiré sexuellement chez moi en premier ?", target: DebateTarget.HIM },
+  { id: 'gen_118', category: DebateCategory.DILEMMA, text: "Toujours dire la vérité ou toujours mentir ?", target: DebateTarget.ALL },
+  { id: 'gen_119', category: DebateCategory.SPICY, text: "Faire l'amour en étant très fatigués : on se force ou on dort ?", target: DebateTarget.COUPLE },
+  { id: 'gen_120', category: DebateCategory.ABSURD, text: "Manger une cuillère de cannelle ou une cuillère de sauce piquante ?", target: DebateTarget.ALL },
+  { id: 'gen_121', category: DebateCategory.DILEMMA, text: "Avoir des bras de 3 mètres ou des jambes de 30 cm ?", target: DebateTarget.ALL },
+  { id: 'gen_122', category: DebateCategory.SPICY, text: "Préfères-tu ma lingerie noire, rouge ou blanche ?", target: DebateTarget.HIM },
+  { id: 'gen_123', category: DebateCategory.DILEMMA, text: "Mourir de froid ou mourir de chaud ?", target: DebateTarget.ALL },
+  { id: 'gen_124', category: DebateCategory.SPICY, text: "Est-ce que tu aimerais me regarder prendre du plaisir seul(e) ?", target: DebateTarget.COUPLE },
+  { id: 'gen_125', category: DebateCategory.COUPLES, text: "Quelle est la tradition familiale que tu détestes mais que tu subis ?", target: DebateTarget.ALL },
+  { id: 'gen_126', category: DebateCategory.DILEMMA, text: "Vivre dans le monde de Harry Potter ou celui de Star Wars ?", target: DebateTarget.ALL },
+  { id: 'gen_127', category: DebateCategory.SPICY, text: "Le matin, tu préfères un café ou un câlin coquin ?", target: DebateTarget.HIM },
+  { id: 'gen_128', category: DebateCategory.DILEMMA, text: "Ne plus jamais pouvoir utiliser de GPS ou ne plus jamais pouvoir utiliser de carte bancaire ?", target: DebateTarget.ALL },
+  { id: 'gen_129', category: DebateCategory.SPICY, text: "Est-ce que ça t'excite quand je suis jaloux/jalouse ?", target: DebateTarget.COUPLE },
+  { id: 'gen_130', category: DebateCategory.ABSURD, text: "Le papier toilette : par-dessus ou par-dessous ?", target: DebateTarget.ALL },
+  { id: 'gen_131', category: DebateCategory.DILEMMA, text: "Perdre la vue ou perdre la parole ?", target: DebateTarget.ALL },
+  { id: 'gen_132', category: DebateCategory.SPICY, text: "Les costumes/déguisements : Ridicules ou excitants ?", target: DebateTarget.COUPLE },
+  { id: 'gen_133', category: DebateCategory.DILEMMA, text: "Être un poisson dans un bocal ou un aigle en cage ?", target: DebateTarget.ALL },
+  { id: 'gen_134', category: DebateCategory.SPICY, text: "À quelle fréquence idéale devrions-nous faire l'amour par semaine ?", target: DebateTarget.COUPLE },
+  { id: 'gen_135', category: DebateCategory.COUPLES, text: "Est-ce que tu penses qu'on passe trop ou pas assez de temps ensemble ?", target: DebateTarget.COUPLE },
+  { id: 'gen_136', category: DebateCategory.DILEMMA, text: "Avoir un bouton 'Pause' sur ta vie ou un bouton 'Retour arrière' ?", target: DebateTarget.ALL },
+  { id: 'gen_137', category: DebateCategory.SPICY, text: "Est-ce que tu te souviens de notre meilleure fois ?", target: DebateTarget.COUPLE },
+  { id: 'gen_138', category: DebateCategory.DILEMMA, text: "Devoir toujours chanter au lieu de parler ou devoir toujours danser au lieu de marcher ?", target: DebateTarget.ALL },
+  { id: 'gen_139', category: DebateCategory.SPICY, text: "Est-ce que tu as déjà rêvé de quelqu'un d'autre (érotiquement) ?", target: DebateTarget.COUPLE },
+  { id: 'gen_140', category: DebateCategory.DILEMMA, text: "Être riche mais détesté de ta famille ou pauvre mais adoré ?", target: DebateTarget.ALL },
+  { id: 'gen_141', category: DebateCategory.SPICY, text: "Les bisous dans le cou : ça chatouille ou ça excite ?", target: DebateTarget.HER },
+  { id: 'gen_142', category: DebateCategory.DILEMMA, text: "Supprimer YouTube ou supprimer Instagram/TikTok ?", target: DebateTarget.ALL },
+  { id: 'gen_143', category: DebateCategory.SPICY, text: "Est-ce que je prends assez d'initiatives ?", target: DebateTarget.COUPLE },
+  { id: 'gen_144', category: DebateCategory.COUPLES, text: "Dans une dispute, préfères-tu régler ça tout de suite ou attendre le lendemain ?", target: DebateTarget.COUPLE },
+  { id: 'gen_145', category: DebateCategory.DILEMMA, text: "Être célèbre pour quelque chose d'horrible ou être inconnu mais faire le bien ?", target: DebateTarget.ALL },
+  { id: 'gen_146', category: DebateCategory.SPICY, text: "L'amour sans sexe est-il possible pour toi ?", target: DebateTarget.HIM },
+  { id: 'gen_147', category: DebateCategory.DILEMMA, text: "Ne plus jamais manger de sucre ou ne plus jamais manger de sel ?", target: DebateTarget.ALL },
+  { id: 'gen_148', category: DebateCategory.SPICY, text: "Préfères-tu le contact peau à peau pour dormir ou chacun son espace ?", target: DebateTarget.COUPLE },
+  { id: 'gen_149', category: DebateCategory.ABSURD, text: "Si tu pouvais créer une nouvelle loi universelle, ce serait quoi ?", target: DebateTarget.ALL },
+  { id: 'gen_150', category: DebateCategory.DILEMMA, text: "Tout recommencer à zéro avec ton savoir actuel ou recommencer à zéro avec 10 millions d'euros ?", target: DebateTarget.COUPLE },
+  // BATCH 4
+  { id: 'gen_251', category: DebateCategory.ABSURD, text: "Une lasagne n'est-elle techniquement qu'un gâteau de pâtes ?", target: DebateTarget.ALL },
+  { id: 'gen_252', category: DebateCategory.ABSURD, text: "Si les zombies arrivent, qui de nous deux servira d'appât ?", target: DebateTarget.COUPLE },
+  { id: 'gen_253', category: DebateCategory.ABSURD, text: "Tu préfères avoir des dents en bois ou des jambes en mousse ?", target: DebateTarget.ALL },
+  { id: 'gen_254', category: DebateCategory.ABSURD, text: "Est-ce que l'eau est mouillée ? (Vrai débat scientifique)", target: DebateTarget.ALL },
+  { id: 'gen_255', category: DebateCategory.ABSURD, text: "Si tu étais un tyran maléfique, quel serait ton nom de méchant ?", target: DebateTarget.HIM },
+  { id: 'gen_256', category: DebateCategory.ABSURD, text: "Penses-tu que les poissons ont soif ?", target: DebateTarget.ALL },
+  { id: 'gen_257', category: DebateCategory.ABSURD, text: "Les pâtes au ketchup : crime culinaire ou plaisir coupable toléré ?", target: DebateTarget.COUPLE },
+  { id: 'gen_258', category: DebateCategory.ABSURD, text: "Si on échangeait de corps pour 24h, quelle est la première chose que tu ferais avec le mien ?", target: DebateTarget.COUPLE },
+  { id: 'gen_259', category: DebateCategory.ABSURD, text: "Tu préfères transpirer de la mayonnaise ou pleurer du vinaigre ?", target: DebateTarget.ALL },
+  { id: 'gen_260', category: DebateCategory.ABSURD, text: "Si tu devais combattre un kangourou boxeur, quelle serait ta stratégie ?", target: DebateTarget.HIM },
+  { id: 'gen_261', category: DebateCategory.ABSURD, text: "Est-ce que les sirènes pondent des œufs ou accouchent-elles ?", target: DebateTarget.HER },
+  { id: 'gen_262', category: DebateCategory.ABSURD, text: "Si les objets inanimés pouvaient parler, lequel raconterait les pires horreurs sur nous ?", target: DebateTarget.COUPLE },
+  { id: 'gen_263', category: DebateCategory.ABSURD, text: "Tu préfères avoir des doigts à la place des orteils ou des orteils à la place des doigts ?", target: DebateTarget.ALL },
+  { id: 'gen_264', category: DebateCategory.ABSURD, text: "Peut-on pleurer sous l'eau ?", target: DebateTarget.ALL },
+  { id: 'gen_265', category: DebateCategory.ABSURD, text: "Si tu devais te marier avec un aliment, lequel choisirais-tu ?", target: DebateTarget.ALL },
+  { id: 'gen_266', category: DebateCategory.COUPLES, text: "Qui de nous deux survivrait le plus longtemps sur une île déserte ?", target: DebateTarget.COUPLE },
+  { id: 'gen_267', category: DebateCategory.ABSURD, text: "Si tu avais une étiquette d'avertissement collée sur le front, qu'est-ce qu'il y aurait écrit ?", target: DebateTarget.ALL },
+  { id: 'gen_268', category: DebateCategory.ABSURD, text: "Tu préfères parler comme Yoda ou respirer comme Dark Vador pour toujours ?", target: DebateTarget.HIM },
+  { id: 'gen_269', category: DebateCategory.ABSURD, text: "Est-ce qu'un centaure bébé tète le sein humain ou le pis du cheval ?", target: DebateTarget.ALL },
+  { id: 'gen_270', category: DebateCategory.ABSURD, text: "Si tu pouvais réduire la taille d'un animal pour le mettre dans ta poche, lequel ?", target: DebateTarget.HER },
+  { id: 'gen_271', category: DebateCategory.ABSURD, text: "Le thé, c'est juste de la soupe de feuilles sale. Vrai ou Faux ?", target: DebateTarget.ALL },
+  { id: 'gen_272', category: DebateCategory.ABSURD, text: "Tu préfères rire à chaque fois que quelqu'un pleure ou pleurer à chaque fois que quelqu'un rit ?", target: DebateTarget.ALL },
+  { id: 'gen_273', category: DebateCategory.ABSURD, text: "Si on nous clonait, est-ce que tu coucherais avec mon clone ?", target: DebateTarget.COUPLE },
+  { id: 'gen_274', category: DebateCategory.ABSURD, text: "Quelle couleur a un miroir ?", target: DebateTarget.ALL },
+  { id: 'gen_275', category: DebateCategory.DILEMMA, text: "Tu préfères porter des chaussures mouillées à vie ou des sous-vêtements trop petits à vie ?", target: DebateTarget.ALL },
+  { id: 'gen_276', category: DebateCategory.ABSURD, text: "Si tu étais un fantôme, qui hanterais-tu en premier ?", target: DebateTarget.HIM },
+  { id: 'gen_277', category: DebateCategory.ABSURD, text: "Est-ce qu'on peut bronzer de la langue ?", target: DebateTarget.ALL },
+  { id: 'gen_278', category: DebateCategory.ABSURD, text: "Si tu devais manger un seul condiment à la cuillère, ce serait quoi ?", target: DebateTarget.HER },
+  { id: 'gen_279', category: DebateCategory.ABSURD, text: "Tu préfères ne plus jamais avoir besoin de dormir ou ne plus jamais avoir besoin de manger ?", target: DebateTarget.ALL },
+  { id: 'gen_280', category: DebateCategory.ABSURD, text: "Si les extraterrestres débarquent, est-ce qu'on les combat ou on essaie de sympathiser ?", target: DebateTarget.COUPLE },
+  { id: 'gen_281', category: DebateCategory.ABSURD, text: "Combien d'enfants de 5 ans penses-tu pouvoir battre à la bagarre avant d'être submergé(e) ?", target: DebateTarget.HIM },
+  { id: 'gen_282', category: DebateCategory.SPICY, text: "Si notre vie sexuelle était un genre de film, ce serait quoi ? (Action, Drame, Comédie...)", target: DebateTarget.COUPLE },
+  { id: 'gen_283', category: DebateCategory.ABSURD, text: "Pourquoi 'séparés' s'écrit tout ensemble, et 'tout ensemble' s'écrit séparés ?", target: DebateTarget.ALL },
+  { id: 'gen_284', category: DebateCategory.ABSURD, text: "Tu préfères avoir des bras de T-Rex ou un cou de girafe ?", target: DebateTarget.ALL },
+  { id: 'gen_285', category: DebateCategory.ABSURD, text: "Si tu étais un légume, lequel serais-tu et pourquoi ?", target: DebateTarget.ALL },
+  { id: 'gen_286', category: DebateCategory.ABSURD, text: "Dormir avec des chaussettes : psychopathie ou confort ?", target: DebateTarget.COUPLE },
+  { id: 'gen_287', category: DebateCategory.ABSURD, text: "Si tu pouvais transformer l'eau du robinet en n'importe quel liquide, lequel ?", target: DebateTarget.HIM },
+  { id: 'gen_288', category: DebateCategory.ABSURD, text: "Est-ce que Cendrillon a payé ses chaussures ou est-ce un cadeau fiscal ?", target: DebateTarget.HER },
+  { id: 'gen_289', category: DebateCategory.ABSURD, text: "Tu préfères avoir un nez rouge de clown permanent ou des chaussures de clown permanentes ?", target: DebateTarget.ALL },
+  { id: 'gen_290', category: DebateCategory.PHILOSOPHY, text: "Si on pouvait télécharger ta conscience dans un grille-pain, serais-tu malheureux ?", target: DebateTarget.ALL },
+  { id: 'gen_291', category: DebateCategory.ABSURD, text: "Si tu devais remplacer tes mains par des objets de cuisine, lesquels ?", target: DebateTarget.ALL },
+  { id: 'gen_292', category: DebateCategory.ABSURD, text: "Qui serait le meilleur président : un chien fidèle ou un chat intelligent ?", target: DebateTarget.ALL },
+  { id: 'gen_293', category: DebateCategory.ABSURD, text: "Tu préfères éternuer des confettis ou pèter des paillettes ?", target: DebateTarget.HER },
+  { id: 'gen_294', category: DebateCategory.ABSURD, text: "Manger une pizza avec des couverts : signe de noblesse ou hérésie ?", target: DebateTarget.COUPLE },
+  { id: 'gen_295', category: DebateCategory.ABSURD, text: "Si tu pouvais insulter quelqu'un avec un nom de fruit, lequel serait le plus blessant ?", target: DebateTarget.ALL },
+  { id: 'gen_296', category: DebateCategory.ABSURD, text: "Tu préfères avoir une musique d'ascenseur dans ta tête h24 ou entendre les pensées des gens mais seulement quand ils jugent ta tenue ?", target: DebateTarget.ALL },
+  { id: 'gen_297', category: DebateCategory.ABSURD, text: "Si je me transforme en ver de terre, m'aimeras-tu encore ?", target: DebateTarget.COUPLE },
+  { id: 'gen_298', category: DebateCategory.ABSURD, text: "Avoir des cheveux en spaghetti (cuits) ou transpirer du sirop d'érable ?", target: DebateTarget.ALL },
+  { id: 'gen_299', category: DebateCategory.ABSURD, text: "Si Jurassic Park ouvrait demain, on achète des billets ou on se cache ?", target: DebateTarget.COUPLE },
+  { id: 'gen_300', category: DebateCategory.ABSURD, text: "Une paille a-t-elle un trou ou deux trous ? (Le retour)", target: DebateTarget.ALL }
+];
+
+export class DebateRepository {
+  static getAll(): DebateTopic[] {
+    return DEBATE_QUESTIONS;
+  }
+
+  static getByCategory(category: DebateCategory): DebateTopic[] {
+    return DEBATE_QUESTIONS.filter(q => q.category === category);
+  }
+
+  static getRandom(category: DebateCategory): DebateTopic {
+    const questions = this.getByCategory(category);
+    const randomIndex = Math.floor(Math.random() * questions.length);
+    return questions[randomIndex];
+  }
+  
+  static getColors(category: DebateCategory): { bg: string, text: string, accent: string } {
+      switch(category) {
+          case DebateCategory.COUPLES: return { bg: 'bg-rose-100 dark:bg-rose-900/40', text: 'text-rose-600 dark:text-rose-300', accent: 'border-rose-200 dark:border-rose-800' };
+          case DebateCategory.PHILOSOPHY: return { bg: 'bg-indigo-100 dark:bg-indigo-900/40', text: 'text-indigo-600 dark:text-indigo-300', accent: 'border-indigo-200 dark:border-indigo-800' };
+          case DebateCategory.DILEMMA: return { bg: 'bg-amber-100 dark:bg-amber-900/40', text: 'text-amber-600 dark:text-amber-300', accent: 'border-amber-200 dark:border-amber-800' };
+          case DebateCategory.SPICY: return { bg: 'bg-purple-100 dark:bg-purple-900/40', text: 'text-purple-600 dark:text-purple-300', accent: 'border-purple-200 dark:border-purple-800' };
+          case DebateCategory.ABSURD: return { bg: 'bg-lime-100 dark:bg-lime-900/40', text: 'text-lime-600 dark:text-lime-300', accent: 'border-lime-200 dark:border-lime-800' };
+          default: return { bg: 'bg-neutral-100 dark:bg-neutral-800', text: 'text-neutral-600 dark:text-neutral-300', accent: 'border-neutral-200 dark:border-neutral-700' };
+      }
+  }
+}
