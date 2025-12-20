@@ -41,7 +41,7 @@ export default function BucketDetailPage({ params }: { params: { id: string } })
 
       if (error || !bucketData) {
         console.error('Error fetching bucket:', error)
-        router.replace('/bucket')
+        router.replace('/life/bucket')
         return
       }
 
@@ -108,7 +108,7 @@ export default function BucketDetailPage({ params }: { params: { id: string } })
     if (!confirm('Êtes-vous sûr de vouloir supprimer cette liste et tout son contenu ?')) return
     try {
       await deleteBucket(params.id)
-      router.replace('/bucket')
+      router.replace('/life/bucket')
     } catch (error) {
       console.error('Error deleting bucket:', error)
       alert('Erreur lors de la suppression')

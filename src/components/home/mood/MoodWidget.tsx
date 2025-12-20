@@ -1,23 +1,58 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import MoodCard from "./MoodCard";
 import MoodSelector, { MoodType } from "./MoodSelector";
 import { supabase } from "@/lib/supabase/client";
 import { upsertMood } from "@/lib/actions";
-import { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
+import { useAppStore } from "@/lib/store/useAppStore";
 
 interface MoodData {
   user_id: string;
   mood_value: string;
+  mood_date: string;
 }
 
 export default function MoodWidget() {
-  const [myMood, setMyMood] = useState<string | null>(null);
-  const [partnerMood, setPartnerMood] = useState<string | null>(null);
+  const { todayMoods, setTodayMoods } = useAppStore();
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // Derive display values from store or fallback
+  const today = new Date().toISOString().split('T')[0];
+  const isDateMatch = todayMoods.date === today;
+  
+  const myMood = isDateMatch ? todayMoods.my : null;
+  const partnerMood = isDateMatch ? todayMoods.partner : null;
+
+  // Combined fetch function
+  const fetchMoods = useCallback(async (uid: string) => {
+    try {
+      const { data: moods, error } = await supabase
+        .from('daily_moods')
+        .select('user_id, mood_value')
+        .eq('mood_date', today);
+
+      if (error) {
+        console.error('Error fetching moods:', error);
+      } else if (moods) {
+        const myEntry = moods.find(m => m.user_id === uid);
+        const partnerEntry = moods.find(m => m.user_id !== uid);
+        
+        setTodayMoods({
+            date: today,
+            my: myEntry?.mood_value || null,
+            partner: partnerEntry?.mood_value || null
+        });
+      }
+    } catch (e) {
+        console.error("Fetch error", e);
+    } finally {
+        setLoading(false);
+    }
+  }, [today, setTodayMoods]);
 
   useEffect(() => {
     let mounted = true;
@@ -30,30 +65,10 @@ export default function MoodWidget() {
         const uid = session.user.id;
         if (mounted) setCurrentUserId(uid);
 
-        const fetchMoods = async () => {
-          const today = new Date().toISOString().split('T')[0];
-          const { data: moods, error } = await supabase
-            .from('daily_moods')
-            .select('user_id, mood_value')
-            .eq('mood_date', today);
-
-          if (error) {
-            console.error('Error fetching moods:', error);
-          } else if (moods && mounted) {
-            const myEntry = moods.find(m => m.user_id === uid);
-            const partnerEntry = moods.find(m => m.user_id !== uid);
-            
-            setMyMood(myEntry?.mood_value || null);
-            setPartnerMood(partnerEntry?.mood_value || null);
-            setLoading(false);
-          }
-        };
-
         // Initial fetch
-        await fetchMoods();
+        await fetchMoods(uid);
 
         // Subscribe to Realtime
-        const today = new Date().toISOString().split('T')[0];
         const channel = supabase
           .channel(channelName)
           .on(
@@ -61,12 +76,34 @@ export default function MoodWidget() {
             {
               event: '*',
               schema: 'public',
-              table: 'daily_moods',
-              filter: `mood_date=eq.${today}`
+              table: 'daily_moods'
             },
-            () => {
-              // On any change, just re-fetch to be safe and simple
-              fetchMoods();
+            (payload) => {
+              // console.log("Realtime Mood Event:", payload);
+              const newRecord = payload.new as MoodData;
+              
+              // Handle INSERT or UPDATE for TODAY
+              if (newRecord && newRecord.mood_date === today) {
+                 const isMe = newRecord.user_id === uid;
+                 
+                 // Get fresh state from store to avoid stale closure
+                 const currentStored = useAppStore.getState().todayMoods;
+                 
+                 const newMy = isMe 
+                    ? newRecord.mood_value 
+                    : (currentStored.date === today ? currentStored.my : null);
+                    
+                 const newPartner = !isMe 
+                    ? newRecord.mood_value 
+                    : (currentStored.date === today ? currentStored.partner : null);
+
+                 // Update store directly
+                 useAppStore.getState().setTodayMoods({
+                     date: today,
+                     my: newMy,
+                     partner: newPartner
+                 });
+              }
             }
           )
           .subscribe();
@@ -82,20 +119,23 @@ export default function MoodWidget() {
     })();
 
     return () => { mounted = false; };
-  }, []);
+  }, [fetchMoods, today]); // Removed setTodayMoods from deps as we use getState()
 
   const handleSelectMood = async (mood: MoodType) => {
     // Optimistic update
-    setMyMood(mood);
+    if (currentUserId) {
+        setTodayMoods({
+            date: today,
+            my: mood,
+            partner: todayMoods.date === today ? todayMoods.partner : null
+        });
+    }
     
     try {
       await upsertMood(mood);
-      // Success toast?
     } catch (e) {
       console.error('Error saving mood:', e);
-      // Revert on error?
-      // setMyMood(previousMood); 
-      // Simplified: just let it stay or refetch
+      // Ideally show toast here
     }
   };
 
@@ -106,7 +146,7 @@ export default function MoodWidget() {
           title="Partenaire"
           moodValue={partnerMood}
           interactive={false}
-          loading={loading}
+          loading={loading && !partnerMood} 
         />
       </div>
       <div className="flex-1 h-full min-h-[140px]">
@@ -115,7 +155,7 @@ export default function MoodWidget() {
           moodValue={myMood}
           interactive={true}
           onClick={() => setIsModalOpen(true)}
-          loading={loading}
+          loading={loading && !myMood}
         />
       </div>
 
