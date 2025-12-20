@@ -1,10 +1,10 @@
 'use client'
 
-import { ThemeProvider } from 'next-themes'
-import { useEffect } from 'react'
 import { flushOutbox } from '@/lib/outbox'
 import { supabase } from '@/lib/supabase/client'
+import { ThemeProvider } from 'next-themes'
 import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -88,7 +88,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   }, [])
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
       {children}
     </ThemeProvider>
   )
