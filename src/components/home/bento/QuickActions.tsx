@@ -8,25 +8,25 @@ export default function QuickActions() {
   return (
     <div className="grid grid-cols-2 gap-3">
       <QuickAction 
-        href="/notes" 
+        href="/souvenirs/notes" 
         icon={<Send className="w-5 h-5" />} 
         label="Mot doux" 
         color="bg-rose-50 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400"
       />
       <QuickAction 
-        href="/bucket" 
+        href="/life/bucket" 
         icon={<ListTodo className="w-5 h-5" />} 
         label="Bucket" 
         color="bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
       />
       <QuickAction 
-        href="/calendar" 
+        href="/life/calendar" 
         icon={<CalendarPlus className="w-5 h-5" />} 
         label="Agenda" 
         color="bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400"
       />
       <QuickAction 
-        href="/cinematch" 
+        href="/playroom/cinematch" 
         icon={<span className="text-xl">🎬</span>} 
         label="CinéMatch" 
         color="bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400"

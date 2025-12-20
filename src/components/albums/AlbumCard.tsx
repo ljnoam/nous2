@@ -18,7 +18,7 @@ const AlbumCard = memo(function AlbumCard({ album }: { album: Album }) {
   const cover = album.cover_photos?.[0]
 
   return (
-    <Link href={`/albums/${album.id}`} className="group block">
+    <Link href={`/souvenirs/albums/${album.id}`} className="group block">
       <div className="relative aspect-square rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 mb-3 shadow-sm border border-black/5 dark:border-white/5">
         {cover ? (
           <Image

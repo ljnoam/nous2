@@ -11,7 +11,7 @@ interface BucketCardProps {
 
 const BucketCard = memo(function BucketCard({ bucket, itemCount = 0 }: BucketCardProps) {
   return (
-    <NextLink href={`/bucket/${bucket.id}`} className="group block">
+    <NextLink href={`/life/bucket/${bucket.id}`} className="group block">
       <div className="relative aspect-square rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 mb-3 shadow-sm border border-black/5 dark:border-white/5 flex items-center justify-center transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-md">
         <div className="absolute top-3 right-3 bg-white/80 dark:bg-black/50 backdrop-blur-sm px-2 py-1 rounded-lg text-xs font-medium text-neutral-600 dark:text-neutral-300 border border-black/5 dark:border-white/5 z-10">
           {itemCount} items
