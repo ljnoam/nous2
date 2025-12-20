@@ -4,7 +4,8 @@
 import { Button } from '@/components/ui/button'
 import { compressImage, createThumbnail } from '@/lib/image-utils'
 import { supabase } from '@/lib/supabase/client'
-import { ArrowLeft, Trash2, Upload, X, ChevronLeft, Plus, MoreVertical, Pencil, ChevronRight } from 'lucide-react'
+import { ArrowLeft, Trash2, Upload, X, ChevronLeft, Plus, MoreVertical, Pencil, ChevronRight, MapPin } from 'lucide-react'
+import { LocationSearch } from '@/components/LocationSearch'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -36,6 +37,9 @@ type Photo = {
   caption: string | null
   taken_at: string | null
   created_at: string
+  latitude: number | null
+  longitude: number | null
+  place_name: string | null
 }
 
 export default function AlbumDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -58,6 +62,10 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
   // Delete Album State
   const [isDeleteDrawerOpen, setIsDeleteDrawerOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+
+  // Location Search State
+  const [showLocationSearch, setShowLocationSearch] = useState(false)
+  const [isBatchLocation, setIsBatchLocation] = useState(false)
 
   useEffect(() => {
     ;(async () => {
@@ -90,7 +98,7 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
         .single()
 
       if (!albumData) {
-        router.replace('/albums')
+        router.replace('/souvenirs/albums')
         return
       }
 
@@ -230,7 +238,7 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
     if (error) {
       alert('Erreur lors de la suppression')
     } else {
-      router.replace('/albums')
+      router.replace('/souvenirs/albums')
     }
   }
 
@@ -247,16 +255,74 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
     setSelectedIndex((prev) => (prev === null ? null : (prev - 1 + photos.length) % photos.length))
   }, [selectedIndex, photos.length])
 
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (selectedIndex === null) return
+      if (showLocationSearch) {
+        if (e.key === 'Escape') setShowLocationSearch(false)
+        return
+      }
       if (e.key === 'ArrowRight') handleNext()
       if (e.key === 'ArrowLeft') handlePrev()
       if (e.key === 'Escape') setSelectedIndex(null)
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [selectedIndex, handleNext, handlePrev])
+  }, [selectedIndex, handleNext, handlePrev, showLocationSearch])
+
+  const handleLocationSelect = async (result: { place_name: string, center: [number, number] }) => {
+    console.log('Location selected:', result)
+    const { center, place_name } = result
+    const [longitude, latitude] = center
+
+    if (isBatchLocation && album) {
+      if (!confirm(`Appliquer "${place_name}" à toutes les photos de cet album ?`)) return
+
+      // Update in DB
+      const { error } = await supabase
+        .from('photos')
+        .update({ 
+          latitude, 
+          longitude, 
+          place_name 
+        })
+        .eq('album_id', album.id)
+
+      if (error) {
+        console.error('Error updating batch location:', error)
+        alert('Erreur lors de la mise à jour des localisations')
+        return
+      }
+
+      // Update local state
+      setPhotos(photos.map(p => ({ ...p, latitude, longitude, place_name })))
+      alert('Localisation appliquée à toutes les photos !')
+    } 
+    else if (selectedPhoto) {
+      // Update SINGLE photo
+      const { error } = await supabase
+        .from('photos')
+        .update({ 
+          latitude, 
+          longitude, 
+          place_name 
+        })
+        .eq('id', selectedPhoto.id)
+
+      if (error) {
+        console.error('Error updating photo location:', error)
+        alert('Erreur lors de la mise à jour de la localisation')
+        return
+      }
+
+      // Update local state
+      setPhotos(photos.map(p => p.id === selectedPhoto.id ? { ...p, latitude, longitude, place_name } : p))
+    }
+
+    setShowLocationSearch(false)
+    setIsBatchLocation(false)
+  }
 
   const variants = {
     enter: (direction: number) => ({
@@ -308,7 +374,7 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
           {/* Floating Header */}
           <div className="sticky top-[calc(env(safe-area-inset-top)+var(--gap))] z-20 mb-6">
             <div className="flex items-center justify-between rounded-2xl border border-black/10 dark:border-white/10 bg-white/80 dark:bg-neutral-900/70 backdrop-blur-md shadow-lg p-3">
-              <Link href="/albums" className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition">
+              <Link href="/souvenirs/albums" className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition">
                 <ChevronLeft className="h-6 w-6" />
               </Link>
               
@@ -357,7 +423,17 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
                     <Plus className="h-5 w-5" />
                   )}
                 </label>
-              </div>
+                <button 
+                  onClick={() => {
+                    setIsBatchLocation(true)
+                    setShowLocationSearch(true)
+                  }}
+                  className="p-2 rounded-xl text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 active:scale-95 transition"
+                  title="Ajouter un lieu à tout l'album"
+                >
+                  <MapPin className="h-5 w-5" />
+                </button>
+            </div>
             </div>
           </div>
 
@@ -380,9 +456,21 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
                     src={photo.thumbnail_url || photo.url}
                     alt={photo.caption || ''}
                     fill
-                    className="object-cover"
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
                     sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 20vw, 16vw"
                   />
+                  
+                  {/* Location Overlay */}
+                  {photo.place_name && (
+                    <div className="absolute inset-x-0 bottom-0 pt-8 pb-1.5 px-2 bg-gradient-to-t from-black/60 via-black/20 to-transparent">
+                        <div className="flex items-center gap-1 text-white">
+                            <MapPin className="w-3 h-3 flex-shrink-0 drop-shadow-md" fill="currentColor" />
+                            <span className="text-[10px] sm:text-[11px] font-medium truncate drop-shadow-md leading-none">
+                                {photo.place_name.split(',')[0]}
+                            </span>
+                        </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -423,7 +511,7 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
                     drag="x"
                     dragConstraints={{ left: 0, right: 0 }}
                     dragElastic={1}
-                    onDragEnd={(e, { offset, velocity }) => {
+                    onDragEnd={(e, { offset }) => {
                       const swipe = offset.x
                       if (swipe < -50) {
                         handleNext()
@@ -436,6 +524,10 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
                   />
                 </AnimatePresence>
               </div>
+
+
+
+
 
               {/* Floating Controls */}
               <div 
@@ -461,6 +553,19 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
                   </button>
                 </div>
 
+                {/* Create Location Button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setIsBatchLocation(false)
+                    setShowLocationSearch(true)
+                  }}
+                  className="bg-neutral-900/80 backdrop-blur-xl border border-white/10 rounded-full p-3 shadow-2xl pointer-events-auto text-blue-400 hover:bg-white/10 active:scale-90 transition flex items-center justify-center h-[58px] w-[58px]"
+                  title="Ajouter un lieu"
+                >
+                  <MapPin className="h-6 w-6" />
+                </button>
+
                 {/* Delete Button */}
                 <button
                   onClick={(e) => {
@@ -476,6 +581,44 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Location Search Overlay - MOVED HERE and updated to fixed/z-[150] to cover everything including lightbox */}
+        {showLocationSearch && (
+          <div 
+            className="fixed inset-0 z-[150] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={(e) => {
+              e.stopPropagation()
+              if (!isBatchLocation) { 
+                 // If not batch, we might be in lightbox, so maybe just close search
+                 setShowLocationSearch(false)
+              } else {
+                 setShowLocationSearch(false)
+                 setIsBatchLocation(false)
+              }
+            }}
+          >
+            <div className="w-full max-w-md bg-white rounded-2xl p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-black">
+                  {isBatchLocation ? "Lieu pour l'album" : "Lieu pour cette photo"}
+                </h3>
+                <button 
+                  onClick={() => {
+                      setShowLocationSearch(false)
+                      if(isBatchLocation) setIsBatchLocation(false)
+                  }}
+                  className="p-1 rounded-full hover:bg-neutral-100 text-black"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <LocationSearch 
+                accessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN || ''} 
+                onLocationSelect={handleLocationSelect}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Delete Album Drawer */}
         <Drawer open={isDeleteDrawerOpen} onOpenChange={setIsDeleteDrawerOpen}>
@@ -494,7 +637,7 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
                   disabled={isDeleting}
                   className="w-full rounded-xl h-12 text-base bg-red-500 hover:bg-red-600 text-white"
                 >
-                  {isDeleting ? 'Suppression...' : 'Supprimer l\'album'}
+                  {isDeleting ? 'Suppression...' : "Supprimer l'album"}
                 </Button>
                 <DrawerClose asChild>
                   <Button variant="outline" className="w-full rounded-xl h-12 text-base">Annuler</Button>
