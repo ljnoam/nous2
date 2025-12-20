@@ -29,10 +29,12 @@ export function LocationSearch({ onLocationSelect, accessToken }: Props) {
 
     const geocoder = new MapboxGeocoder({
       accessToken: mapboxgl.accessToken,
-      types: 'place,locality,neighborhood,address,poi',
-      placeholder: 'Rechercher un lieu...',
+      types: 'country,region,place,locality,neighborhood,address,poi',
+      placeholder: 'Rechercher un lieu (ville, pays, monument...)',
       mapboxgl: mapboxgl,
       marker: false,
+      language: 'fr',
+      limit: 10,
     })
 
     geocoder.addTo(containerRef.current)

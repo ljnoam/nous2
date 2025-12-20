@@ -175,7 +175,7 @@ export default function MapPage() {
            - Updated to 180px for extra breathing room/separation from new persistent bottom nav design.
            - 'mb-[80px]' ensures it doesn't go under the floating bottom bar if it's there.
         */
-    <div className="relative h-[calc(100vh-170px)] w-full rounded-[2rem] overflow-hidden translate-y-2 border border-black/5 dark:border-white/5 shadow-2xl">
+    <div className="relative h-[calc(100dvh-180px)] w-full rounded-[2rem] overflow-hidden mt-2 border border-black/5 dark:border-white/5 shadow-2xl">
       
       {/* Map Container */}
       <div ref={mapContainer} className="h-full w-full" />
