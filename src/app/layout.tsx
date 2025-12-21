@@ -1,5 +1,6 @@
 import InstallBanner from '@/components/pwa/InstallBanner'
 import SplashScreen from '@/components/SplashScreen'
+import { AppReadyProvider } from '@/lib/context/AppReadyContext'
 import { createServerClient } from '@supabase/ssr'
 import { cookies, headers } from 'next/headers'
 import '../styles/globals.css'
@@ -83,10 +84,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         `}
         data-has-session={hasSession ? '1' : '0'}
       >
-        <OneSignalInit userId={user?.id} />
-        <SplashScreen />
-        <InstallBanner />
-        <Providers>{children}</Providers>
+        <AppReadyProvider>
+          <OneSignalInit userId={user?.id} />
+          <SplashScreen />
+          <InstallBanner />
+          <Providers>{children}</Providers>
+        </AppReadyProvider>
       </body>
     </html>
   )
