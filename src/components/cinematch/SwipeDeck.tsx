@@ -140,7 +140,7 @@ export default function SwipeDeck({ session, onMatch }: SwipeDeckProps) {
   const activeCards = cards.slice(0, 3).reverse();
 
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden">
+    <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden pt-[calc(env(safe-area-inset-top)+16px)] pb-20">
         {activeCards.map((card, index) => {
            const isFront = index === activeCards.length - 1;
            return (

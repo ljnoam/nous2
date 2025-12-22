@@ -51,7 +51,7 @@ export default function SetupForm({ onSessionStarted }: SetupFormProps) {
   const genres = type === 'movie' ? GENRES_MOVIE : GENRES_TV;
 
   return (
-    <div className="flex flex-col h-full bg-neutral-50 dark:bg-black/95 px-6 pt-10 pb-4 relative overflow-y-auto font-sans scrollbar-hide">
+    <div className="flex flex-col h-full min-h-screen bg-neutral-50 dark:bg-black px-6 pt-[calc(env(safe-area-inset-top)+20px)] pb-4 relative overflow-y-auto font-sans scrollbar-hide">
       {/* Header */}
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
