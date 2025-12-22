@@ -4,8 +4,9 @@ import { useState } from "react";
 import { GENRES_MOVIE, GENRES_TV, PROVIDERS } from "@/lib/tmdb";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { ArrowRight, Film, Tv, Sparkles, Check } from "lucide-react";
+import { ArrowRight, Film, Tv, Sparkles, Check, X } from "lucide-react";
 import { createMatchSession } from "@/lib/actions";
+import Link from "next/link";
 
 interface SetupFormProps {
   onSessionStarted: (session: any) => void;
@@ -51,7 +52,15 @@ export default function SetupForm({ onSessionStarted }: SetupFormProps) {
   const genres = type === 'movie' ? GENRES_MOVIE : GENRES_TV;
 
   return (
-    <div className="flex flex-col h-full min-h-screen bg-white dark:bg-neutral-950 px-6 pt-[calc(env(safe-area-inset-top)+20px)] pb-4 relative overflow-y-auto font-sans scrollbar-hide">
+    <div className="flex flex-col h-full min-h-screen bg-white dark:bg-neutral-950 px-6 pt-[calc(env(safe-area-inset-top)+20px)] pb-4 relative overflow-y-auto font-sans no-scrollbar">
+      {/* Close button - top right */}
+      <Link 
+        href="/playroom"
+        className="absolute top-[calc(env(safe-area-inset-top)+16px)] right-4 z-50 p-3 rounded-full bg-white/10 hover:bg-white/20 dark:bg-black/10 dark:hover:bg-black/20 backdrop-blur-md shadow-lg transition-all active:scale-95 border border-neutral-200 dark:border-white/10"
+      >
+        <X className="w-5 h-5 text-neutral-900 dark:text-white" />
+      </Link>
+
       {/* Header */}
       <motion.div 
         initial={{ opacity: 0, y: -20 }}

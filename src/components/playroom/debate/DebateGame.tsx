@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { DebateCategory, DebateRepository, DebateTopic } from '@/lib/data/debateDetails';
 import DebateCard from './DebateCard';
-import { ChevronLeft, RefreshCw, XCircle } from 'lucide-react'; // Added XCircle for resetting
+import { ChevronLeft, RefreshCw, XCircle, X } from 'lucide-react'; // Added X for close button
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useAppStore } from '@/lib/store/useAppStore';
@@ -82,7 +82,14 @@ export default function DebateGame() {
   // CATEGORY SELECTION VIEW
   if (!category) {
     return (
-      <div className="flex flex-col gap-6 p-4 pt-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="min-h-screen h-screen bg-white dark:bg-neutral-950 flex flex-col gap-6 p-4 pt-[calc(env(safe-area-inset-top)+20px)] animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
+        {/* Close button - top right */}
+        <Link 
+          href="/playroom"
+          className="absolute top-[calc(env(safe-area-inset-top)+16px)] right-4 z-50 p-3 rounded-full bg-white/10 hover:bg-white/20 dark:bg-black/10 dark:hover:bg-black/20 backdrop-blur-md shadow-lg transition-all active:scale-95 border border-neutral-200 dark:border-white/10"
+        >
+          <X className="w-5 h-5 text-neutral-900 dark:text-white" />
+        </Link>
         <div className="text-center space-y-2 mb-4">
           <h1 className="text-3xl font-bold font-display">Debate Arena 🎙️</h1>
           <p className="text-neutral-500 dark:text-neutral-400">Choisis un thème et lance le débat !</p>
@@ -108,41 +115,35 @@ export default function DebateGame() {
              );
           })}
         </div>
-        
-        <div className="mt-8 flex flex-col items-center gap-4">
-            <Link 
-                href="/playroom"
-                className="text-sm text-neutral-400 underline"
+
+        {viewedDebateIds.length > 0 && (
+          <div className="mt-8 flex flex-col items-center gap-4">
+            <button 
+              onClick={() => {
+                if(confirm("Effacer tout l'historique des questions déjà vues ?")) {
+                  resetDebateHistory();
+                }
+              }}
+              className="text-xs text-neutral-300 dark:text-neutral-600 hover:text-red-500 transition"
             >
-                Retour au menu
-            </Link>
-            {viewedDebateIds.length > 0 && (
-                <button 
-                  onClick={() => {
-                      if(confirm("Effacer tout l'historique des questions déjà vues ?")) {
-                          resetDebateHistory();
-                      }
-                  }}
-                  className="text-xs text-neutral-300 dark:text-neutral-600 hover:text-red-500 transition"
-                >
-                  (Réinitialiser l'historique)
-                </button>
-            )}
-        </div>
+              (Réinitialiser l'historique)
+            </button>
+          </div>
+        )}
       </div>
     );
   }
 
   // GAME VIEW
   return (
-    <div className="flex flex-col h-full min-h-[80vh] px-4 pt-4 pb-20 relative">
+    <div className="min-h-screen h-screen bg-white dark:bg-neutral-950 flex flex-col px-4 pt-[calc(env(safe-area-inset-top)+20px)] pb-20 relative">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <button 
           onClick={quitGame}
-          className="p-3 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition"
+          className="p-3 rounded-full bg-white/10 hover:bg-white/20 dark:bg-black/10 dark:hover:bg-black/20 backdrop-blur-md shadow-lg transition-all active:scale-95 border border-neutral-200 dark:border-white/10"
         >
-          <ChevronLeft className="w-5 h-5" />
+          <X className="w-5 h-5 text-neutral-900 dark:text-white" />
         </button>
         <div className="px-4 py-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-sm font-semibold">
           {category}
