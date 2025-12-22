@@ -161,28 +161,21 @@ export default function MapPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center" style={{ height: 'calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 180px)' }}>
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
-      </div>
+      <main className="px-3 pb-24">
+        <div className="flex items-center justify-center h-[60vh]">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+        </div>
+      </main>
     )
   }
 
   return (
-    /* 
-       Height Calculation:
-       - 100dvh: Dynamic viewport height (respects mobile browser UI)
-       - safe-area-inset-top: iPhone notch/Dynamic Island
-       - safe-area-inset-bottom: Home indicator
-       - 160px: Header (~60px) + Bottom Nav (~80px) + margins
-       - The mx-3 adds horizontal margins for visual polish
-    */
-    <div 
-      className="relative w-full rounded-[2rem] overflow-hidden mx-3 border border-black/5 dark:border-white/5 shadow-2xl"
-      style={{ 
-        height: 'calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 160px)',
-        marginBottom: 'calc(env(safe-area-inset-bottom) + 80px)'
-      }}
-    >
+    <main className="px-3 pb-24">
+      {/* Map Container - takes remaining height with proper spacing */}
+      <div 
+        className="relative w-full rounded-[1.5rem] overflow-hidden border border-black/5 dark:border-white/5 shadow-xl"
+        style={{ height: 'calc(100dvh - 200px)' }}
+      >
       
       {/* Map Container */}
       <div ref={mapContainer} className="h-full w-full" />
@@ -238,5 +231,6 @@ export default function MapPage() {
          </div>
       )}
     </div>
+    </main>
   )
 }
