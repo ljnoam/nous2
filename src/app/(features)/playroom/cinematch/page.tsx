@@ -81,7 +81,7 @@ export default function CineMatchPage() {
 
   if (loading) {
     return (
-      <div className="h-screen min-h-screen flex flex-col items-center justify-center font-bold bg-neutral-50 dark:bg-black text-neutral-900 dark:text-white gap-4">
+      <div className="h-screen min-h-screen flex flex-col items-center justify-center font-bold bg-white dark:bg-neutral-950 text-neutral-900 dark:text-white gap-4">
         <span className="text-4xl animate-bounce">🍿</span>
         <span>Chargement...</span>
       </div>
@@ -102,7 +102,7 @@ export default function CineMatchPage() {
   }
 
   return (
-    <div className="min-h-screen h-screen w-full overflow-hidden bg-neutral-50 dark:bg-black text-black dark:text-white relative">
+    <div className="min-h-screen h-screen w-full overflow-hidden bg-white dark:bg-neutral-950 text-neutral-900 dark:text-white relative">
       {/* Header with Quit button if session active */}
       {session && (
         <div className="absolute top-[calc(env(safe-area-inset-top)+16px)] right-4 z-50">
