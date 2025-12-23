@@ -300,7 +300,6 @@ function CreateAlbumDrawer({
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Titre de l'album"
                 className="w-full rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 text-lg font-medium"
-                autoFocus
               />
             </div>
 

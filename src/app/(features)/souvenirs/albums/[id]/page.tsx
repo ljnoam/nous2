@@ -381,7 +381,6 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
               <div className="text-center flex-1 px-2 min-w-0">
                 {isEditingTitle ? (
                   <input
-                    autoFocus
                     value={editTitle}
                     onChange={(e) => setEditTitle(e.target.value)}
                     onBlur={handleTitleSave}

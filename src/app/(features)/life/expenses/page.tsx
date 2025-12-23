@@ -413,7 +413,6 @@ export default function ExpensesPage() {
                         className="w-full rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-4 py-3 outline-none focus:ring-2 focus:ring-purple-500 text-3xl font-bold h-16 text-center"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
-                        autoFocus
                     />
                 </div>
                 
@@ -463,7 +462,6 @@ export default function ExpensesPage() {
                         className="w-full rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-4 py-3 outline-none focus:ring-2 focus:ring-purple-500 text-3xl font-bold h-16 text-center text-emerald-500"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
-                        autoFocus
                     />
                 </div>
               </div>

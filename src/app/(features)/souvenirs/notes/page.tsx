@@ -222,7 +222,6 @@ export default function NotesPage() {
                   onChange={(e) => setNewNote(e.target.value)}
                   placeholder="Écris quelque chose de mignon..."
                   className="w-full rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-4 py-3 outline-none focus:ring-2 focus:ring-pink-500 resize-none h-32 text-lg"
-                  autoFocus
                 />
 
                 <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">

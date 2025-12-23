@@ -348,7 +348,6 @@ export default function CalendarPage() {
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Titre"
                   className="w-full rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-4 py-3 outline-none focus:ring-2 focus:ring-purple-500 text-lg font-medium"
-                  autoFocus
                 />
                 
                 <div className="flex items-center justify-between py-1">

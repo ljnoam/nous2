@@ -229,7 +229,6 @@ export default function ProfilePage() {
                     onChange={(e) => setFirstNameInput(e.target.value)}
                     placeholder="Ton prénom"
                     className="w-40 text-center rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-2 py-1 outline-none text-lg font-bold"
-                    autoFocus
                   />
                   <button onClick={saveFirstName} className="text-xs bg-black text-white dark:bg-white dark:text-black rounded-lg px-2 py-1">OK</button>
                   <button onClick={() => { setEditingName(false); setFirstNameInput(profile?.first_name || '') }} className="text-xs opacity-60 px-2">Annuler</button>
