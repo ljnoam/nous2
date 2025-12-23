@@ -28,6 +28,7 @@ export default function MapPage() {
   const map = useRef<mapboxgl.Map | null>(null)
   const [photos, setPhotos] = useState<PhotoLocation[]>([])
   const [selectedLocation, setSelectedLocation] = useState<PhotoLocation[] | null>(null)
+  const [viewingPhoto, setViewingPhoto] = useState<PhotoLocation | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -65,9 +66,9 @@ export default function MapPage() {
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/standard', // New Standard Style
+      style: 'mapbox://styles/nono94/cmjhsxkvp007201qz2th30xbt',
       center: [2.3522, 48.8566], // Default to Paris
-      zoom: 3,
+      zoom: 1.5,
       projection: 'globe', // Display map as a 3D globe
     })
 
@@ -127,10 +128,12 @@ export default function MapPage() {
       `
 
       el.addEventListener('click', () => {
-        // Find all photos at this exact location or just show this one
-        // For simplicity, let's just show this one (or filtered list if we want)
-        // Let's show this one for now.
-        setSelectedLocation([photo])
+        // Find all photos at this exact location (by place_name or coordinates)
+        const locationPhotos = photos.filter(p => 
+          p.place_name === photo.place_name || 
+          (Math.abs(p.latitude - photo.latitude) < 0.001 && Math.abs(p.longitude - photo.longitude) < 0.001)
+        )
+        setSelectedLocation(locationPhotos.length > 0 ? locationPhotos : [photo])
         
         // Fly to location
         map.current?.flyTo({
@@ -161,7 +164,7 @@ export default function MapPage() {
 
   if (loading) {
     return (
-      <main className="px-3 pb-24">
+      <main className="px-3 pb-20">
         <div className="flex items-center justify-center h-[60vh]">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
         </div>
@@ -170,11 +173,11 @@ export default function MapPage() {
   }
 
   return (
-    <main className="px-3 pb-24">
+    <main className="px-3 pb-20">
       {/* Map Container - takes remaining height with proper spacing */}
       <div 
-        className="relative w-full rounded-[1.5rem] overflow-hidden border border-black/5 dark:border-white/5 shadow-xl"
-        style={{ height: 'calc(100dvh - 200px)' }}
+        className="relative w-full mt-2 rounded-[1.5rem] overflow-hidden border border-black/5 dark:border-white/5 shadow-xl"
+        style={{ height: 'calc(100dvh - 180px)' }}
       >
       
       {/* Map Container */}
@@ -187,38 +190,101 @@ export default function MapPage() {
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="absolute bottom-0 left-0 right-0 z-50 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md rounded-t-3xl shadow-negative-lg p-6 max-h-[80vh] overflow-y-auto"
+            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+            className="absolute bottom-0 left-0 right-0 z-50 bg-white dark:bg-neutral-900 rounded-t-[2rem] shadow-2xl"
+            style={{ maxHeight: '75vh' }}
           >
-            <div className="w-12 h-1 bg-neutral-300 dark:bg-neutral-700 rounded-full mx-auto mb-6" />
+            {/* Drag Handle */}
+            <div className="flex justify-center pt-3 pb-2">
+              <div className="w-10 h-1 bg-neutral-300 dark:bg-neutral-700 rounded-full" />
+            </div>
             
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <MapPin className="h-5 w-5 text-blue-500" />
-                <h3 className="font-bold text-lg truncate pr-4">
-                  {selectedLocation[0].place_name || 'Lieu inconnu'}
-                </h3>
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 pb-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5 text-pink-500 flex-shrink-0" />
+                  <h3 className="font-bold text-lg truncate">
+                    {selectedLocation[0].place_name || 'Lieu inconnu'}
+                  </h3>
+                </div>
+                <p className="text-sm text-neutral-500 mt-0.5">
+                  {selectedLocation.length} photo{selectedLocation.length > 1 ? 's' : ''}
+                </p>
               </div>
               <button 
                 onClick={() => setSelectedLocation(null)}
-                className="p-2 bg-neutral-100 dark:bg-neutral-800 rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                className="p-2.5 bg-neutral-100 dark:bg-neutral-800 rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-700 transition active:scale-95"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {selectedLocation.map(photo => (
-                <div key={photo.id} className="relative aspect-square rounded-xl overflow-hidden bg-neutral-200">
-                  <Image
-                    src={photo.url}
-                    alt={photo.caption || ''}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-              ))}
+            {/* Photos Grid - Scrollable with hidden scrollbar */}
+            <div className="px-4 pb-8 overflow-y-auto no-scrollbar" style={{ maxHeight: 'calc(75vh - 100px)' }}>
+              <div className="grid grid-cols-3 gap-2">
+                {selectedLocation.map(photo => (
+                  <button
+                    key={photo.id}
+                    onClick={() => setViewingPhoto(photo)}
+                    className="relative aspect-square rounded-xl overflow-hidden bg-neutral-200 dark:bg-neutral-800 active:scale-95 transition-transform"
+                  >
+                    <Image
+                      src={photo.thumbnail_url || photo.url}
+                      alt={photo.caption || ''}
+                      fill
+                      className="object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Full Screen Photo Viewer */}
+      <AnimatePresence>
+        {viewingPhoto && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black flex items-center justify-center"
+            onClick={() => setViewingPhoto(null)}
+          >
+            {/* Close button */}
+            <button 
+              onClick={() => setViewingPhoto(null)}
+              className="absolute top-[calc(env(safe-area-inset-top)+16px)] right-4 z-10 p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md transition active:scale-95"
+            >
+              <X className="h-6 w-6 text-white" />
+            </button>
+            
+            {/* Photo */}
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25 }}
+              className="relative w-full h-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Image
+                src={viewingPhoto.url}
+                alt={viewingPhoto.caption || ''}
+                fill
+                className="object-contain"
+                priority
+              />
+              
+              {/* Caption overlay */}
+              {viewingPhoto.caption && (
+                <div className="absolute bottom-0 left-0 right-0 p-6 pb-[calc(env(safe-area-inset-bottom)+24px)] bg-gradient-to-t from-black/80 to-transparent">
+                  <p className="text-white text-center">{viewingPhoto.caption}</p>
+                </div>
+              )}
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
