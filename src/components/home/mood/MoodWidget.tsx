@@ -21,7 +21,8 @@ export default function MoodWidget() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   // Derive display values from store or fallback
-  const today = new Date().toISOString().split('T')[0];
+  const getToday = () => new Date().toISOString().split('T')[0];
+  const today = getToday();
   const isDateMatch = todayMoods.date === today;
   
   const myMood = isDateMatch ? todayMoods.my : null;
@@ -29,11 +30,12 @@ export default function MoodWidget() {
 
   // Combined fetch function
   const fetchMoods = useCallback(async (uid: string) => {
+    const currentToday = getToday();
     try {
       const { data: moods, error } = await supabase
         .from('daily_moods')
         .select('user_id, mood_value')
-        .eq('mood_date', today);
+        .eq('mood_date', currentToday);
 
       if (error) {
         console.error('Error fetching moods:', error);
@@ -42,7 +44,7 @@ export default function MoodWidget() {
         const partnerEntry = moods.find(m => m.user_id !== uid);
         
         setTodayMoods({
-            date: today,
+            date: currentToday,
             my: myEntry?.mood_value || null,
             partner: partnerEntry?.mood_value || null
         });
@@ -52,13 +54,13 @@ export default function MoodWidget() {
     } finally {
         setLoading(false);
     }
-  }, [today, setTodayMoods]);
+  }, [setTodayMoods]);
 
   useEffect(() => {
     let mounted = true;
     const channelName = 'mood-updates';
 
-    (async () => {
+    const init = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return;
@@ -79,11 +81,12 @@ export default function MoodWidget() {
               table: 'daily_moods'
             },
             (payload) => {
+              const currentToday = getToday();
               // console.log("Realtime Mood Event:", payload);
               const newRecord = payload.new as MoodData;
               
               // Handle INSERT or UPDATE for TODAY
-              if (newRecord && newRecord.mood_date === today) {
+              if (newRecord && newRecord.mood_date === currentToday) {
                  const isMe = newRecord.user_id === uid;
                  
                  // Get fresh state from store to avoid stale closure
@@ -91,15 +94,15 @@ export default function MoodWidget() {
                  
                  const newMy = isMe 
                     ? newRecord.mood_value 
-                    : (currentStored.date === today ? currentStored.my : null);
+                    : (currentStored.date === currentToday ? currentStored.my : null);
                     
                  const newPartner = !isMe 
                     ? newRecord.mood_value 
-                    : (currentStored.date === today ? currentStored.partner : null);
+                    : (currentStored.date === currentToday ? currentStored.partner : null);
 
                  // Update store directly
                  useAppStore.getState().setTodayMoods({
-                     date: today,
+                     date: currentToday,
                      my: newMy,
                      partner: newPartner
                  });
@@ -116,18 +119,33 @@ export default function MoodWidget() {
         console.error('MoodWidget init error:', e);
         if (mounted) setLoading(false);
       }
-    })();
+    };
 
-    return () => { mounted = false; };
-  }, [fetchMoods, today]); // Removed setTodayMoods from deps as we use getState()
+    init();
+
+    // Re-fetch on visibility change (app coming to foreground)
+    const handleVisibilityChange = () => {
+        if (document.visibilityState === 'visible' && currentUserId) {
+            fetchMoods(currentUserId);
+        }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => { 
+        mounted = false; 
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [fetchMoods, currentUserId]); 
 
   const handleSelectMood = async (mood: MoodType) => {
+    const currentToday = getToday();
     // Optimistic update
     if (currentUserId) {
         setTodayMoods({
-            date: today,
+            date: currentToday,
             my: mood,
-            partner: todayMoods.date === today ? todayMoods.partner : null
+            partner: todayMoods.date === currentToday ? todayMoods.partner : null
         });
     }
     
